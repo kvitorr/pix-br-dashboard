@@ -1,6 +1,7 @@
 package tcc.vitor.pix_dashboard.database.models;
 
 import jakarta.persistence.*;
+import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.enums.IngestionRunStatus;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,10 @@ public class IngestionRun {
 
     @Column(name = "ended_at")
     private LocalDateTime endedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source")
+    private IngestionRunSource source;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -81,6 +86,14 @@ public class IngestionRun {
 
     public void setEndedAt(LocalDateTime endedAt) {
         this.endedAt = endedAt;
+    }
+
+    public IngestionRunSource getSource() {
+        return source;
+    }
+
+    public void setSource(IngestionRunSource source) {
+        this.source = source;
     }
 
     public IngestionRunStatus getStatus() {
