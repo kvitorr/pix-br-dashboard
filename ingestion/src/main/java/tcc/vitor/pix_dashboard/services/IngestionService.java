@@ -26,7 +26,7 @@ public class IngestionService {
         long startTime = System.currentTimeMillis();
 
         try {
-            List<PixTransacaoMunicipioDTO> records = bcbPixClient.fetchAllPages(database);
+            List<PixTransacaoMunicipioDTO> records = bcbPixClient.fetchAll(database);
 
             long durationMs = System.currentTimeMillis() - startTime;
 

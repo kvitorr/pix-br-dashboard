@@ -8,7 +8,6 @@ import org.springframework.web.client.RestClient;
 import tcc.vitor.pix_dashboard.services.dto.BcbOdataResponse;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -36,53 +35,34 @@ public class BcbPixClient {
                 .build();
     }
 
-    public List<PixTransacaoMunicipioDTO> fetchAllPages(String database) {
-        var allRecords = new ArrayList<PixTransacaoMunicipioDTO>();
-        int skip = 0;
-        int page = 1;
+    public List<PixTransacaoMunicipioDTO> fetchAll(String database) {
+        log.atInfo()
+                .addKeyValue("database", database)
+                .addKeyValue("top", PAGE_SIZE)
+                .log("Buscando dados da API do BCB");
 
-        while (true) {
-            log.atInfo()
-                    .addKeyValue("database", database)
-                    .addKeyValue("page", page)
-                    .addKeyValue("skip", skip)
-                    .addKeyValue("pageSize", PAGE_SIZE)
-                    .log("Buscando pagina da API do BCB");
+        List<PixTransacaoMunicipioDTO> records = fetchWithRetry(database);
 
-            List<PixTransacaoMunicipioDTO> pageRecords = fetchPageWithRetry(database, skip);
+        log.atInfo()
+                .addKeyValue("database", database)
+                .addKeyValue("totalRecords", records.size())
+                .log("Dados recebidos com sucesso");
 
-            log.atInfo()
-                    .addKeyValue("database", database)
-                    .addKeyValue("page", page)
-                    .addKeyValue("recordsInPage", pageRecords.size())
-                    .log("Pagina recebida com sucesso");
-
-            allRecords.addAll(pageRecords);
-
-            if (pageRecords.size() < PAGE_SIZE) {
-                break;
-            }
-
-            skip += PAGE_SIZE;
-            page++;
-        }
-
-        return allRecords;
+        return records;
     }
 
-    private List<PixTransacaoMunicipioDTO> fetchPageWithRetry(String database, int skip) {
+    private List<PixTransacaoMunicipioDTO> fetchWithRetry(String database) {
         int attempt = 0;
         long backoffMs = INITIAL_BACKOFF_MS;
 
         while (true) {
             attempt++;
             try {
-                return fetchPage(database, skip);
+                return fetchPage(database);
             } catch (BcbRetryableException e) {
                 if (attempt >= MAX_RETRIES) {
                     log.atError()
                             .addKeyValue("database", database)
-                            .addKeyValue("skip", skip)
                             .addKeyValue("attempts", attempt)
                             .addKeyValue("statusCode", e.getStatusCode())
                             .log("Numero maximo de tentativas atingido");
@@ -91,7 +71,6 @@ public class BcbPixClient {
 
                 log.atWarn()
                         .addKeyValue("database", database)
-                        .addKeyValue("skip", skip)
                         .addKeyValue("attempt", attempt)
                         .addKeyValue("maxRetries", MAX_RETRIES)
                         .addKeyValue("statusCode", e.getStatusCode())
@@ -104,13 +83,12 @@ public class BcbPixClient {
         }
     }
 
-    private List<PixTransacaoMunicipioDTO> fetchPage(String database, int skip) {
+    private List<PixTransacaoMunicipioDTO> fetchPage(String database) {
         BcbOdataResponse response = restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/TransacoesPixPorMunicipio(DataBase=@DataBase)")
                         .queryParam("@DataBase", "'" + database + "'")
                         .queryParam("$top", PAGE_SIZE)
-                        .queryParam("$skip", skip)
                         .queryParam("$format", "json")
                         .queryParam("$select", SELECT_FIELDS)
                         .build())
