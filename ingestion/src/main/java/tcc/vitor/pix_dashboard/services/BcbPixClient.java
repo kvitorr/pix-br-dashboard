@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import tcc.vitor.pix_dashboard.exceptions.BcbApiException;
+import tcc.vitor.pix_dashboard.exceptions.BcbRetryableException;
 import tcc.vitor.pix_dashboard.services.dto.BcbOdataResponse;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
 
@@ -114,29 +116,6 @@ public class BcbPixClient {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new BcbApiException("Interrompido durante backoff", e);
-        }
-    }
-
-    public static class BcbApiException extends RuntimeException {
-        public BcbApiException(String message) {
-            super(message);
-        }
-
-        public BcbApiException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
-
-    public static class BcbRetryableException extends RuntimeException {
-        private final int statusCode;
-
-        public BcbRetryableException(int statusCode) {
-            super("Erro retentavel na API do BCB: HTTP " + statusCode);
-            this.statusCode = statusCode;
-        }
-
-        public int getStatusCode() {
-            return statusCode;
         }
     }
 }

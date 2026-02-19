@@ -3,6 +3,7 @@ package tcc.vitor.pix_dashboard.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tcc.vitor.pix_dashboard.exceptions.BcbApiException;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
 
 import java.util.List;
@@ -37,7 +38,7 @@ public class IngestionService {
                     .log("Ingestao concluida com sucesso");
 
             return records;
-        } catch (BcbPixClient.BcbApiException e) {
+        } catch (BcbApiException e) {
             long durationMs = System.currentTimeMillis() - startTime;
 
             log.atError()
