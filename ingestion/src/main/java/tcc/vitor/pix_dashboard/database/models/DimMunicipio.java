@@ -37,14 +37,26 @@ public class DimMunicipio {
     @Column(name = "pib_per_capita")
     private BigDecimal pibPerCapita;
 
+    @Column(name = "populacao_urbana")
+    private Integer populacaoUrbana;
+
+    @Column(name = "populacao_rural")
+    private Integer populacaoRural;
+
     @Column(name = "idhm")
     private BigDecimal idhm;
 
+    @Column(name = "idhm_longevidade")
+    private BigDecimal idhmLongevidade;
+
+    @Column(name = "idhm_educacao")
+    private BigDecimal idhmEducacao;
+
+    @Column(name = "idhm_renda")
+    private BigDecimal idhmRenda;
+
     @Column(name = "taxa_urbanizacao")
     private BigDecimal taxaUrbanizacao;
-
-    @Column(name = "cobertura_internet")
-    private BigDecimal coberturaInternet;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -135,6 +147,22 @@ public class DimMunicipio {
         this.pibPerCapita = pibPerCapita;
     }
 
+    public Integer getPopulacaoUrbana() {
+        return populacaoUrbana;
+    }
+
+    public void setPopulacaoUrbana(Integer populacaoUrbana) {
+        this.populacaoUrbana = populacaoUrbana;
+    }
+
+    public Integer getPopulacaoRural() {
+        return populacaoRural;
+    }
+
+    public void setPopulacaoRural(Integer populacaoRural) {
+        this.populacaoRural = populacaoRural;
+    }
+
     public BigDecimal getIdhm() {
         return idhm;
     }
@@ -143,20 +171,36 @@ public class DimMunicipio {
         this.idhm = idhm;
     }
 
+    public BigDecimal getIdhmLongevidade() {
+        return idhmLongevidade;
+    }
+
+    public void setIdhmLongevidade(BigDecimal idhmLongevidade) {
+        this.idhmLongevidade = idhmLongevidade;
+    }
+
+    public BigDecimal getIdhmEducacao() {
+        return idhmEducacao;
+    }
+
+    public void setIdhmEducacao(BigDecimal idhmEducacao) {
+        this.idhmEducacao = idhmEducacao;
+    }
+
+    public BigDecimal getIdhmRenda() {
+        return idhmRenda;
+    }
+
+    public void setIdhmRenda(BigDecimal idhmRenda) {
+        this.idhmRenda = idhmRenda;
+    }
+
     public BigDecimal getTaxaUrbanizacao() {
         return taxaUrbanizacao;
     }
 
     public void setTaxaUrbanizacao(BigDecimal taxaUrbanizacao) {
         this.taxaUrbanizacao = taxaUrbanizacao;
-    }
-
-    public BigDecimal getCoberturaInternet() {
-        return coberturaInternet;
-    }
-
-    public void setCoberturaInternet(BigDecimal coberturaInternet) {
-        this.coberturaInternet = coberturaInternet;
     }
 
     public LocalDateTime getCreatedAt() {

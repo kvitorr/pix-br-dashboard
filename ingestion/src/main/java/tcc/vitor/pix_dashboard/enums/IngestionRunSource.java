@@ -4,5 +4,6 @@ public enum IngestionRunSource {
     BACEN_PIX,
     IBGE_POP,
     IBGE_PIB,
-    IBGE_IDHM
+    IBGE_URBANIZACAO,
+    IDHM_ESTADUAL
 }
