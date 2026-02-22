@@ -21,14 +21,14 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class IngestionRunService {
+public class IngestionService {
 
     private final IngestionRunRepository ingestionRunRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public IngestionRunService(IngestionRunRepository ingestionRunRepository) {
+    public IngestionService(IngestionRunRepository ingestionRunRepository) {
         this.ingestionRunRepository = ingestionRunRepository;
     }
 

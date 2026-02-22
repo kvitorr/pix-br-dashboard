@@ -3,6 +3,7 @@ package tcc.vitor.pix_dashboard.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tcc.vitor.pix_dashboard.clients.BcbPixClient;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.exceptions.BcbApiException;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
@@ -15,12 +16,12 @@ public class BacenPixIngestionService {
     private static final Logger log = LoggerFactory.getLogger(BacenPixIngestionService.class);
 
     private final BcbPixClient bcbPixClient;
-    private final IngestionRunService ingestionRunService;
+    private final IngestionService ingestionService;
 
     public BacenPixIngestionService(BcbPixClient bcbPixClient,
-                                    IngestionRunService ingestionRunService) {
+                                    IngestionService ingestionService) {
         this.bcbPixClient = bcbPixClient;
-        this.ingestionRunService = ingestionRunService;
+        this.ingestionService = ingestionService;
     }
 
     public IngestionRun ingest(String database) {
@@ -28,16 +29,16 @@ public class BacenPixIngestionService {
                 .addKeyValue("database", database)
                 .log("Iniciando ingestao para o periodo");
 
-        IngestionRun run = ingestionRunService.createRunningRecord(database);
+        IngestionRun run = ingestionService.createRunningRecord(database);
         long startTime = System.currentTimeMillis();
 
         try {
             List<PixTransacaoMunicipioDTO> records = bcbPixClient.fetchAll(database);
 
-            int upserted = ingestionRunService.persistRecords(records, run);
+            int upserted = ingestionService.persistRecords(records, run);
 
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionRunService.markAsSuccess(run, records.size(), upserted);
+            ingestionService.markAsSuccess(run, records.size(), upserted);
 
             log.atInfo()
                     .addKeyValue("database", database)
@@ -50,7 +51,7 @@ public class BacenPixIngestionService {
 
         } catch (BcbApiException e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionRunService.markAsFailed(run, "BCB_API_ERROR", e.getMessage());
+            ingestionService.markAsFailed(run, "BCB_API_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("database", database)
@@ -61,7 +62,7 @@ public class BacenPixIngestionService {
             throw e;
         } catch (Exception e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionRunService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
+            ingestionService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("database", database)

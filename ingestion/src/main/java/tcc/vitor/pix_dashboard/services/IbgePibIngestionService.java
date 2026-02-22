@@ -3,6 +3,7 @@ package tcc.vitor.pix_dashboard.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tcc.vitor.pix_dashboard.clients.IbgePibClient;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.exceptions.IbgeApiException;
@@ -16,27 +17,27 @@ public class IbgePibIngestionService {
     private static final Logger log = LoggerFactory.getLogger(IbgePibIngestionService.class);
 
     private final IbgePibClient ibgePibClient;
-    private final IngestionRunService ingestionRunService;
+    private final IngestionService ingestionService;
 
     public IbgePibIngestionService(IbgePibClient ibgePibClient,
-                                    IngestionRunService ingestionRunService) {
+                                    IngestionService ingestionService) {
         this.ibgePibClient = ibgePibClient;
-        this.ingestionRunService = ingestionRunService;
+        this.ingestionService = ingestionService;
     }
 
     public IngestionRun ingest() {
         log.atInfo().log("Iniciando ingestao de PIB IBGE/SIDRA");
 
-        IngestionRun run = ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null);
+        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null);
         long startTime = System.currentTimeMillis();
 
         try {
             List<IbgePibDTO> records = ibgePibClient.fetchAll();
 
-            int upserted = ingestionRunService.persistPib(records);
+            int upserted = ingestionService.persistPib(records);
 
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionRunService.markAsSuccess(run, records.size(), upserted);
+            ingestionService.markAsSuccess(run, records.size(), upserted);
 
             log.atInfo()
                     .addKeyValue("totalRecords", records.size())
@@ -48,7 +49,7 @@ public class IbgePibIngestionService {
 
         } catch (IbgeApiException e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionRunService.markAsFailed(run, "IBGE_API_ERROR", e.getMessage());
+            ingestionService.markAsFailed(run, "IBGE_API_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("error", e.getMessage())
@@ -58,7 +59,7 @@ public class IbgePibIngestionService {
             throw e;
         } catch (Exception e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionRunService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
+            ingestionService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("error", e.getMessage())

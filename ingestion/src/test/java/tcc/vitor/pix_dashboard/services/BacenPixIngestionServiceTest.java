@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tcc.vitor.pix_dashboard.clients.BcbPixClient;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.enums.IngestionRunStatus;
@@ -31,7 +32,7 @@ class BacenPixIngestionServiceTest {
     private BcbPixClient bcbPixClient;
 
     @Mock
-    private IngestionRunService ingestionRunService;
+    private IngestionService ingestionService;
 
     @InjectMocks
     private BacenPixIngestionService bacenPixIngestionService;
@@ -58,55 +59,55 @@ class BacenPixIngestionServiceTest {
 
     @Test
     void ingest_happyPath_delegatesToPersistenceServiceAndReturnsRun() {
-        when(ingestionRunService.createRunningRecord("202401")).thenReturn(runningRun);
+        when(ingestionService.createRunningRecord("202401")).thenReturn(runningRun);
         when(bcbPixClient.fetchAll("202401")).thenReturn(List.of(sampleDto));
-        when(ingestionRunService.persistRecords(any(), eq(runningRun))).thenReturn(1);
+        when(ingestionService.persistRecords(any(), eq(runningRun))).thenReturn(1);
 
         IngestionRun result = bacenPixIngestionService.ingest("202401");
 
         assertThat(result).isEqualTo(runningRun);
-        verify(ingestionRunService).createRunningRecord("202401");
+        verify(ingestionService).createRunningRecord("202401");
         verify(bcbPixClient).fetchAll("202401");
-        verify(ingestionRunService).persistRecords(List.of(sampleDto), runningRun);
-        verify(ingestionRunService).markAsSuccess(runningRun, 1, 1);
-        verify(ingestionRunService, never()).markAsFailed(any(), anyString(), anyString());
+        verify(ingestionService).persistRecords(List.of(sampleDto), runningRun);
+        verify(ingestionService).markAsSuccess(runningRun, 1, 1);
+        verify(ingestionService, never()).markAsFailed(any(), anyString(), anyString());
     }
 
     @Test
     void ingest_whenBcbApiFails_marksRunAsFailedAndRethrows() {
-        when(ingestionRunService.createRunningRecord("202401")).thenReturn(runningRun);
+        when(ingestionService.createRunningRecord("202401")).thenReturn(runningRun);
         when(bcbPixClient.fetchAll("202401")).thenThrow(new BcbApiException("API timeout"));
 
         assertThatThrownBy(() -> bacenPixIngestionService.ingest("202401"))
                 .isInstanceOf(BcbApiException.class)
                 .hasMessageContaining("API timeout");
 
-        verify(ingestionRunService).markAsFailed(runningRun, "BCB_API_ERROR", "API timeout");
-        verify(ingestionRunService, never()).markAsSuccess(any(), anyInt(), anyInt());
+        verify(ingestionService).markAsFailed(runningRun, "BCB_API_ERROR", "API timeout");
+        verify(ingestionService, never()).markAsSuccess(any(), anyInt(), anyInt());
     }
 
     @Test
     void ingest_withEmptyRecords_callsPersistWithEmptyListAndSucceeds() {
-        when(ingestionRunService.createRunningRecord("202401")).thenReturn(runningRun);
+        when(ingestionService.createRunningRecord("202401")).thenReturn(runningRun);
         when(bcbPixClient.fetchAll("202401")).thenReturn(List.of());
-        when(ingestionRunService.persistRecords(any(), eq(runningRun))).thenReturn(0);
+        when(ingestionService.persistRecords(any(), eq(runningRun))).thenReturn(0);
 
         bacenPixIngestionService.ingest("202401");
 
-        verify(ingestionRunService).markAsSuccess(runningRun, 0, 0);
+        verify(ingestionService).markAsSuccess(runningRun, 0, 0);
     }
 
     @Test
     void ingest_whenUnexpectedExceptionOccurs_wrapsInBcbApiException() {
-        when(ingestionRunService.createRunningRecord("202401")).thenReturn(runningRun);
+        when(ingestionService.createRunningRecord("202401")).thenReturn(runningRun);
         when(bcbPixClient.fetchAll("202401")).thenReturn(List.of(sampleDto));
-        when(ingestionRunService.persistRecords(any(), any()))
+        when(ingestionService.persistRecords(any(), any()))
                 .thenThrow(new RuntimeException("DB connection lost"));
 
         assertThatThrownBy(() -> bacenPixIngestionService.ingest("202401"))
                 .isInstanceOf(BcbApiException.class)
                 .hasMessageContaining("Erro inesperado na ingestao");
 
-        verify(ingestionRunService).markAsFailed(runningRun, "UNEXPECTED_ERROR", "DB connection lost");
+        verify(ingestionService).markAsFailed(runningRun, "UNEXPECTED_ERROR", "DB connection lost");
     }
 }

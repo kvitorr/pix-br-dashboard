@@ -12,11 +12,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ingestion")
-public class BacenPixController {
+public class BacenPixIngestionController {
 
     private final BacenPixIngestionService bacenPixIngestionService;
 
-    public BacenPixController(BacenPixIngestionService bacenPixIngestionService) {
+    public BacenPixIngestionController(BacenPixIngestionService bacenPixIngestionService) {
         this.bacenPixIngestionService = bacenPixIngestionService;
     }
 

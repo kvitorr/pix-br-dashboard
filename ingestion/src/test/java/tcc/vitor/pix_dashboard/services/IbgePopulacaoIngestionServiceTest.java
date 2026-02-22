@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tcc.vitor.pix_dashboard.clients.IbgePopulacaoClient;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.enums.IngestionRunStatus;
@@ -27,7 +28,7 @@ class IbgePopulacaoIngestionServiceTest {
     private IbgePopulacaoClient ibgePopulacaoClient;
 
     @Mock
-    private IngestionRunService ingestionRunService;
+    private IngestionService ingestionService;
 
     @InjectMocks
     private IbgePopulacaoIngestionService ibgePopulacaoIngestionService;
@@ -47,24 +48,24 @@ class IbgePopulacaoIngestionServiceTest {
 
     @Test
     void ingest_happyPath_delegatesToPersistenceAndReturnsRun() {
-        when(ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
+        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenReturn(List.of(sampleDto));
-        when(ingestionRunService.persistPopulacao(any())).thenReturn(1);
+        when(ingestionService.persistPopulacao(any())).thenReturn(1);
 
         IngestionRun result = ibgePopulacaoIngestionService.ingest("2024");
 
         assertThat(result).isEqualTo(runningRun);
-        verify(ingestionRunService).createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024");
+        verify(ingestionService).createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024");
         verify(ibgePopulacaoClient).fetchAll("2024");
-        verify(ingestionRunService).persistPopulacao(List.of(sampleDto));
-        verify(ingestionRunService).markAsSuccess(runningRun, 1, 1);
-        verify(ingestionRunService, never()).markAsFailed(any(), anyString(), anyString());
+        verify(ingestionService).persistPopulacao(List.of(sampleDto));
+        verify(ingestionService).markAsSuccess(runningRun, 1, 1);
+        verify(ingestionService, never()).markAsFailed(any(), anyString(), anyString());
     }
 
     @Test
     void ingest_whenIbgeApiFails_marksRunAsFailedAndRethrows() {
-        when(ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
+        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenThrow(new IbgeApiException("API timeout"));
 
@@ -72,34 +73,34 @@ class IbgePopulacaoIngestionServiceTest {
                 .isInstanceOf(IbgeApiException.class)
                 .hasMessageContaining("API timeout");
 
-        verify(ingestionRunService).markAsFailed(runningRun, "IBGE_API_ERROR", "API timeout");
-        verify(ingestionRunService, never()).markAsSuccess(any(), anyInt(), anyInt());
+        verify(ingestionService).markAsFailed(runningRun, "IBGE_API_ERROR", "API timeout");
+        verify(ingestionService, never()).markAsSuccess(any(), anyInt(), anyInt());
     }
 
     @Test
     void ingest_withEmptyRecords_callsPersistWithEmptyListAndSucceeds() {
-        when(ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
+        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenReturn(List.of());
-        when(ingestionRunService.persistPopulacao(any())).thenReturn(0);
+        when(ingestionService.persistPopulacao(any())).thenReturn(0);
 
         ibgePopulacaoIngestionService.ingest("2024");
 
-        verify(ingestionRunService).markAsSuccess(runningRun, 0, 0);
+        verify(ingestionService).markAsSuccess(runningRun, 0, 0);
     }
 
     @Test
     void ingest_whenUnexpectedExceptionOccurs_wrapsInIbgeApiException() {
-        when(ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
+        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenReturn(List.of(sampleDto));
-        when(ingestionRunService.persistPopulacao(any()))
+        when(ingestionService.persistPopulacao(any()))
                 .thenThrow(new RuntimeException("DB connection lost"));
 
         assertThatThrownBy(() -> ibgePopulacaoIngestionService.ingest("2024"))
                 .isInstanceOf(IbgeApiException.class)
                 .hasMessageContaining("Erro inesperado na ingestao de populacao");
 
-        verify(ingestionRunService).markAsFailed(runningRun, "UNEXPECTED_ERROR", "DB connection lost");
+        verify(ingestionService).markAsFailed(runningRun, "UNEXPECTED_ERROR", "DB connection lost");
     }
 }

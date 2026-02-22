@@ -1,4 +1,4 @@
-package tcc.vitor.pix_dashboard.services;
+package tcc.vitor.pix_dashboard.clients;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

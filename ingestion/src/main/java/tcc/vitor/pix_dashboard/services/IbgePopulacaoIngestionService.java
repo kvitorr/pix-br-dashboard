@@ -3,6 +3,7 @@ package tcc.vitor.pix_dashboard.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tcc.vitor.pix_dashboard.clients.IbgePopulacaoClient;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.exceptions.IbgeApiException;
@@ -16,12 +17,12 @@ public class IbgePopulacaoIngestionService {
     private static final Logger log = LoggerFactory.getLogger(IbgePopulacaoIngestionService.class);
 
     private final IbgePopulacaoClient ibgePopulacaoClient;
-    private final IngestionRunService ingestionRunService;
+    private final IngestionService ingestionService;
 
     public IbgePopulacaoIngestionService(IbgePopulacaoClient ibgePopulacaoClient,
-                                         IngestionRunService ingestionRunService) {
+                                         IngestionService ingestionService) {
         this.ibgePopulacaoClient = ibgePopulacaoClient;
-        this.ingestionRunService = ingestionRunService;
+        this.ingestionService = ingestionService;
     }
 
     public IngestionRun ingest(String ano) {
@@ -29,16 +30,16 @@ public class IbgePopulacaoIngestionService {
                 .addKeyValue("ano", ano)
                 .log("Iniciando ingestao de populacao IBGE");
 
-        IngestionRun run = ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, ano);
+        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, ano);
         long startTime = System.currentTimeMillis();
 
         try {
             List<IbgePopulacaoDTO> records = ibgePopulacaoClient.fetchAll(ano);
 
-            int upserted = ingestionRunService.persistPopulacao(records);
+            int upserted = ingestionService.persistPopulacao(records);
 
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionRunService.markAsSuccess(run, records.size(), upserted);
+            ingestionService.markAsSuccess(run, records.size(), upserted);
 
             log.atInfo()
                     .addKeyValue("ano", ano)
@@ -51,7 +52,7 @@ public class IbgePopulacaoIngestionService {
 
         } catch (IbgeApiException e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionRunService.markAsFailed(run, "IBGE_API_ERROR", e.getMessage());
+            ingestionService.markAsFailed(run, "IBGE_API_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("ano", ano)
@@ -62,7 +63,7 @@ public class IbgePopulacaoIngestionService {
             throw e;
         } catch (Exception e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionRunService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
+            ingestionService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("ano", ano)

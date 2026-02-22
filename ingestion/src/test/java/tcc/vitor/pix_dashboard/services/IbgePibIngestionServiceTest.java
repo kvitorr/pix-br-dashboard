@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tcc.vitor.pix_dashboard.clients.IbgePibClient;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.enums.IngestionRunStatus;
@@ -28,7 +29,7 @@ class IbgePibIngestionServiceTest {
     private IbgePibClient ibgePibClient;
 
     @Mock
-    private IngestionRunService ingestionRunService;
+    private IngestionService ingestionService;
 
     @InjectMocks
     private IbgePibIngestionService ibgePibIngestionService;
@@ -48,24 +49,24 @@ class IbgePibIngestionServiceTest {
 
     @Test
     void ingest_happyPath_delegatesToPersistenceAndReturnsRun() {
-        when(ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null))
+        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null))
                 .thenReturn(runningRun);
         when(ibgePibClient.fetchAll()).thenReturn(List.of(sampleDto));
-        when(ingestionRunService.persistPib(any())).thenReturn(1);
+        when(ingestionService.persistPib(any())).thenReturn(1);
 
         IngestionRun result = ibgePibIngestionService.ingest();
 
         assertThat(result).isEqualTo(runningRun);
-        verify(ingestionRunService).createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null);
+        verify(ingestionService).createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null);
         verify(ibgePibClient).fetchAll();
-        verify(ingestionRunService).persistPib(List.of(sampleDto));
-        verify(ingestionRunService).markAsSuccess(runningRun, 1, 1);
-        verify(ingestionRunService, never()).markAsFailed(any(), anyString(), anyString());
+        verify(ingestionService).persistPib(List.of(sampleDto));
+        verify(ingestionService).markAsSuccess(runningRun, 1, 1);
+        verify(ingestionService, never()).markAsFailed(any(), anyString(), anyString());
     }
 
     @Test
     void ingest_whenIbgeApiFails_marksRunAsFailedAndRethrows() {
-        when(ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null))
+        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null))
                 .thenReturn(runningRun);
         when(ibgePibClient.fetchAll()).thenThrow(new IbgeApiException("SIDRA timeout"));
 
@@ -73,34 +74,34 @@ class IbgePibIngestionServiceTest {
                 .isInstanceOf(IbgeApiException.class)
                 .hasMessageContaining("SIDRA timeout");
 
-        verify(ingestionRunService).markAsFailed(runningRun, "IBGE_API_ERROR", "SIDRA timeout");
-        verify(ingestionRunService, never()).markAsSuccess(any(), anyInt(), anyInt());
+        verify(ingestionService).markAsFailed(runningRun, "IBGE_API_ERROR", "SIDRA timeout");
+        verify(ingestionService, never()).markAsSuccess(any(), anyInt(), anyInt());
     }
 
     @Test
     void ingest_withEmptyRecords_callsPersistWithEmptyListAndSucceeds() {
-        when(ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null))
+        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null))
                 .thenReturn(runningRun);
         when(ibgePibClient.fetchAll()).thenReturn(List.of());
-        when(ingestionRunService.persistPib(any())).thenReturn(0);
+        when(ingestionService.persistPib(any())).thenReturn(0);
 
         ibgePibIngestionService.ingest();
 
-        verify(ingestionRunService).markAsSuccess(runningRun, 0, 0);
+        verify(ingestionService).markAsSuccess(runningRun, 0, 0);
     }
 
     @Test
     void ingest_whenUnexpectedExceptionOccurs_wrapsInIbgeApiException() {
-        when(ingestionRunService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null))
+        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null))
                 .thenReturn(runningRun);
         when(ibgePibClient.fetchAll()).thenReturn(List.of(sampleDto));
-        when(ingestionRunService.persistPib(any()))
+        when(ingestionService.persistPib(any()))
                 .thenThrow(new RuntimeException("DB connection lost"));
 
         assertThatThrownBy(() -> ibgePibIngestionService.ingest())
                 .isInstanceOf(IbgeApiException.class)
                 .hasMessageContaining("Erro inesperado na ingestao de PIB");
 
-        verify(ingestionRunService).markAsFailed(runningRun, "UNEXPECTED_ERROR", "DB connection lost");
+        verify(ingestionService).markAsFailed(runningRun, "UNEXPECTED_ERROR", "DB connection lost");
     }
 }
