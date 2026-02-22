@@ -6,23 +6,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
-import tcc.vitor.pix_dashboard.services.IngestionService;
+import tcc.vitor.pix_dashboard.services.BacenPixIngestionService;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ingestion")
-public class IngestionController {
+public class BacenPixController {
 
-    private final IngestionService ingestionService;
+    private final BacenPixIngestionService bacenPixIngestionService;
 
-    public IngestionController(IngestionService ingestionService) {
-        this.ingestionService = ingestionService;
+    public BacenPixController(BacenPixIngestionService bacenPixIngestionService) {
+        this.bacenPixIngestionService = bacenPixIngestionService;
     }
 
     @PostMapping("/bacen-pix")
     public ResponseEntity<Map<String, Object>> ingestBacenPix(@RequestParam String database) {
-        IngestionRun run = ingestionService.ingest(database);
+        IngestionRun run = bacenPixIngestionService.ingest(database);
 
         Map<String, Object> response = Map.of(
                 "ingestionRunId", run.getId(),

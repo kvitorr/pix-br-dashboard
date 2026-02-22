@@ -10,17 +10,17 @@ import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
 import java.util.List;
 
 @Service
-public class IngestionService {
+public class BacenPixIngestionService {
 
-    private static final Logger log = LoggerFactory.getLogger(IngestionService.class);
+    private static final Logger log = LoggerFactory.getLogger(BacenPixIngestionService.class);
 
     private final BcbPixClient bcbPixClient;
-    private final IngestionPersistenceService ingestionPersistenceService;
+    private final IngestionRunService ingestionRunService;
 
-    public IngestionService(BcbPixClient bcbPixClient,
-                            IngestionPersistenceService ingestionPersistenceService) {
+    public BacenPixIngestionService(BcbPixClient bcbPixClient,
+                                    IngestionRunService ingestionRunService) {
         this.bcbPixClient = bcbPixClient;
-        this.ingestionPersistenceService = ingestionPersistenceService;
+        this.ingestionRunService = ingestionRunService;
     }
 
     public IngestionRun ingest(String database) {
@@ -28,16 +28,16 @@ public class IngestionService {
                 .addKeyValue("database", database)
                 .log("Iniciando ingestao para o periodo");
 
-        IngestionRun run = ingestionPersistenceService.createRunningRecord(database);
+        IngestionRun run = ingestionRunService.createRunningRecord(database);
         long startTime = System.currentTimeMillis();
 
         try {
             List<PixTransacaoMunicipioDTO> records = bcbPixClient.fetchAll(database);
 
-            int upserted = ingestionPersistenceService.persistRecords(records, run);
+            int upserted = ingestionRunService.persistRecords(records, run);
 
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionPersistenceService.markAsSuccess(run, records.size(), upserted);
+            ingestionRunService.markAsSuccess(run, records.size(), upserted);
 
             log.atInfo()
                     .addKeyValue("database", database)
@@ -50,7 +50,7 @@ public class IngestionService {
 
         } catch (BcbApiException e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionPersistenceService.markAsFailed(run, "BCB_API_ERROR", e.getMessage());
+            ingestionRunService.markAsFailed(run, "BCB_API_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("database", database)
@@ -61,7 +61,7 @@ public class IngestionService {
             throw e;
         } catch (Exception e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionPersistenceService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
+            ingestionRunService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("database", database)
