@@ -11,6 +11,8 @@ import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.enums.IngestionRunStatus;
 import tcc.vitor.pix_dashboard.services.dto.IbgePibDTO;
 import tcc.vitor.pix_dashboard.services.dto.IbgePopulacaoDTO;
+import tcc.vitor.pix_dashboard.services.dto.IbgeUrbanizacaoDTO;
+import tcc.vitor.pix_dashboard.services.dto.IidhmDTO;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
 
 import java.math.BigDecimal;
@@ -108,6 +110,30 @@ public class IngestionService {
     }
 
     @Transactional
+    public int persistUrbanizacao(List<IbgeUrbanizacaoDTO> records) {
+        int updated = 0;
+        for (IbgeUrbanizacaoDTO dto : records) {
+            updated += entityManager.createNativeQuery("""
+                    UPDATE dim_municipio
+                    SET populacao_urbana  = :populacaoUrbana,
+                        populacao_rural   = :populacaoRural,
+                        taxa_urbanizacao  = CASE
+                            WHEN :populacaoUrbana + :populacaoRural > 0
+                            THEN ROUND((:populacaoUrbana::decimal / (:populacaoUrbana + :populacaoRural)) * 100, 4)
+                            ELSE NULL
+                        END,
+                        updated_at        = now()
+                    WHERE municipio_ibge = :municipioIbge
+                    """)
+                    .setParameter("populacaoUrbana", dto.populacaoUrbana())
+                    .setParameter("populacaoRural", dto.populacaoRural())
+                    .setParameter("municipioIbge", dto.municipioIbge())
+                    .executeUpdate();
+        }
+        return updated;
+    }
+
+    @Transactional
     public int persistPib(List<IbgePibDTO> records) {
         int updated = 0;
         for (IbgePibDTO dto : records) {
@@ -125,6 +151,29 @@ public class IngestionService {
                     """)
                     .setParameter("pib", pibReais)
                     .setParameter("municipioIbge", dto.municipioIbge())
+                    .executeUpdate();
+        }
+        return updated;
+    }
+
+    @Transactional
+    public int persistIdhm(List<IidhmDTO> records) {
+        int updated = 0;
+        for (IidhmDTO dto : records) {
+            updated += entityManager.createNativeQuery("""
+                    UPDATE dim_municipio
+                    SET idhm             = :idhm,
+                        idhm_longevidade = :idhmLongevidade,
+                        idhm_educacao    = :idhmEducacao,
+                        idhm_renda       = :idhmRenda,
+                        updated_at       = now()
+                    WHERE UPPER(TRIM(estado)) = UPPER(TRIM(:nomeEstado))
+                    """)
+                    .setParameter("idhm", dto.idhm())
+                    .setParameter("idhmLongevidade", dto.idhmLongevidade())
+                    .setParameter("idhmEducacao", dto.idhmEducacao())
+                    .setParameter("idhmRenda", dto.idhmRenda())
+                    .setParameter("nomeEstado", dto.nomeEstado())
                     .executeUpdate();
         }
         return updated;
