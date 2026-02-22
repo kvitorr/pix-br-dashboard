@@ -46,11 +46,19 @@ public class IngestionService {
     public int persistRecords(List<PixTransacaoMunicipioDTO> records, IngestionRun run) {
         int upserted = 0;
         for (PixTransacaoMunicipioDTO dto : records) {
-            upsertDimMunicipio(dto);
-            upsertFactPixMunicipioMes(dto, run.getId());
+            String municipioIbge = resolveCodigoMunicipio(dto.municipioIbge());
+            upsertDimMunicipio(dto, municipioIbge);
+            upsertFactPixMunicipioMes(dto, run.getId(), municipioIbge);
             upserted++;
         }
         return upserted;
+    }
+
+    private String resolveCodigoMunicipio(String municipioIbge) {
+        if (municipioIbge == null || municipioIbge.isBlank()) {
+            return "NULL_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        }
+        return municipioIbge;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -122,7 +130,7 @@ public class IngestionService {
         return updated;
     }
 
-    private void upsertDimMunicipio(PixTransacaoMunicipioDTO dto) {
+    private void upsertDimMunicipio(PixTransacaoMunicipioDTO dto, String municipioIbge) {
         entityManager.createNativeQuery("""
                 INSERT INTO dim_municipio (municipio_ibge, municipio, estado_ibge, estado, sigla_regiao, regiao,
                                            created_at, updated_at)
@@ -136,7 +144,7 @@ public class IngestionService {
                         regiao       = EXCLUDED.regiao,
                         updated_at   = now()
                 """)
-                .setParameter("municipioIbge", dto.municipioIbge())
+                .setParameter("municipioIbge", municipioIbge)
                 .setParameter("municipio", dto.municipio())
                 .setParameter("estadoIbge", dto.estadoIbge())
                 .setParameter("estado", dto.estado())
@@ -145,7 +153,7 @@ public class IngestionService {
                 .executeUpdate();
     }
 
-    private void upsertFactPixMunicipioMes(PixTransacaoMunicipioDTO dto, UUID ingestionRunId) {
+    private void upsertFactPixMunicipioMes(PixTransacaoMunicipioDTO dto, UUID ingestionRunId, String municipioIbge) {
         LocalDate anoMes = LocalDate.parse(dto.anoMes() + "01", DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         entityManager.createNativeQuery("""
@@ -186,7 +194,7 @@ public class IngestionService {
                         updated_at           = now()
                 """)
                 .setParameter("anoMes", anoMes)
-                .setParameter("municipioIbge", dto.municipioIbge())
+                .setParameter("municipioIbge", municipioIbge)
                 .setParameter("estadoIbge", dto.estadoIbge())
                 .setParameter("estado", dto.estado())
                 .setParameter("regiao", dto.regiao())
