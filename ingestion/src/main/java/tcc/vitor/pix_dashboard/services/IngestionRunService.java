@@ -9,8 +9,11 @@ import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.database.repositories.IngestionRunRepository;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.enums.IngestionRunStatus;
+import tcc.vitor.pix_dashboard.services.dto.IbgePibDTO;
+import tcc.vitor.pix_dashboard.services.dto.IbgePopulacaoDTO;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -67,6 +70,56 @@ public class IngestionRunService {
         run.setErrorCode(errorCode);
         run.setErrorMessage(errorMessage);
         ingestionRunRepository.save(run);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public IngestionRun createIbgeRunningRecord(IngestionRunSource source, String params) {
+        IngestionRun run = new IngestionRun();
+        run.setSource(source);
+        run.setStatus(IngestionRunStatus.RUNNING);
+        run.setParams(params != null ? "{\"ano\":\"" + params + "\"}" : "{}");
+        run.setStartedAt(LocalDateTime.now());
+        return ingestionRunRepository.save(run);
+    }
+
+    @Transactional
+    public int persistPopulacao(List<IbgePopulacaoDTO> records) {
+        int updated = 0;
+        for (IbgePopulacaoDTO dto : records) {
+            updated += entityManager.createNativeQuery("""
+                    UPDATE dim_municipio
+                    SET populacao   = :populacao,
+                        updated_at = now()
+                    WHERE municipio_ibge = :municipioIbge
+                    """)
+                    .setParameter("populacao", dto.populacao())
+                    .setParameter("municipioIbge", dto.municipioIbge())
+                    .executeUpdate();
+        }
+        return updated;
+    }
+
+    @Transactional
+    public int persistPib(List<IbgePibDTO> records) {
+        int updated = 0;
+        for (IbgePibDTO dto : records) {
+            BigDecimal pibReais = dto.pibMilReais().multiply(new BigDecimal("1000"));
+            updated += entityManager.createNativeQuery("""
+                    UPDATE dim_municipio
+                    SET pib            = :pib,
+                        pib_per_capita = CASE
+                            WHEN populacao IS NOT NULL AND populacao > 0
+                            THEN :pib / populacao
+                            ELSE NULL
+                        END,
+                        updated_at = now()
+                    WHERE municipio_ibge = :municipioIbge
+                    """)
+                    .setParameter("pib", pibReais)
+                    .setParameter("municipioIbge", dto.municipioIbge())
+                    .executeUpdate();
+        }
+        return updated;
     }
 
     private void upsertDimMunicipio(PixTransacaoMunicipioDTO dto) {
