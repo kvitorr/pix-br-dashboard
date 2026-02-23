@@ -84,23 +84,12 @@ public class IbgeUrbanizacaoClient {
                     return valor != null && !valor.isBlank() && !valor.equals("-");
                 })
                 .forEach(serie -> {
-                    String municipioIbge = normalizarCodigoIbge(serie.localidade().id());
+                    String municipioIbge = serie.localidade().id();
                     Long populacao = Long.parseLong(serie.serie().get(ANO_CENSO));
                     mapa.put(municipioIbge, populacao);
                 });
 
         return mapa;
-    }
-
-    /**
-     * O IBGE retorna o código do município com 7 dígitos na tabela 9923.
-     * Normaliza para 6 dígitos (padrão usado no projeto) removendo o último dígito verificador.
-     */
-    private String normalizarCodigoIbge(String codigo) {
-        if (codigo != null && codigo.length() == 7) {
-            return codigo.substring(0, 6);
-        }
-        return codigo;
     }
 
     private List<IbgeAgregadosResponse> fetchWithRetry(String classificacao) {
