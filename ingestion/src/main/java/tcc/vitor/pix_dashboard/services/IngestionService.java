@@ -93,82 +93,98 @@ public class IngestionService {
     }
 
     @Transactional
-    public int persistPopulacao(List<IbgePopulacaoDTO> records) {
+    public int persistPopulacao(List<IbgePopulacaoDTO> records, int ano) {
         int updated = 0;
         for (IbgePopulacaoDTO dto : records) {
             updated += entityManager.createNativeQuery("""
-                    UPDATE dim_municipio
-                    SET populacao   = :populacao,
-                        updated_at = now()
-                    WHERE municipio_ibge = :municipioIbge
+                    INSERT INTO dim_populacao (municipio_ibge, ano, populacao, created_at, updated_at)
+                    VALUES (:municipioIbge, :ano, :populacao, now(), now())
+                    ON CONFLICT (municipio_ibge, ano) DO UPDATE
+                        SET populacao   = EXCLUDED.populacao,
+                            updated_at  = now()
                     """)
-                    .setParameter("populacao", dto.populacao())
                     .setParameter("municipioIbge", dto.municipioIbge())
+                    .setParameter("ano", ano)
+                    .setParameter("populacao", dto.populacao())
                     .executeUpdate();
         }
         return updated;
     }
 
     @Transactional
-    public int persistUrbanizacao(List<IbgeUrbanizacaoDTO> records) {
+    public int persistUrbanizacao(List<IbgeUrbanizacaoDTO> records, int ano) {
         int updated = 0;
         for (IbgeUrbanizacaoDTO dto : records) {
             updated += entityManager.createNativeQuery("""
-                    UPDATE dim_municipio
-                    SET populacao_urbana  = :populacaoUrbana,
-                        populacao_rural   = :populacaoRural,
-                        taxa_urbanizacao  = CASE
-                            WHEN :populacaoUrbana + :populacaoRural > 0
-                            THEN ROUND((CAST(:populacaoUrbana AS decimal) / (:populacaoUrbana + :populacaoRural)) * 100, 4)
-                            ELSE NULL
-                        END,
-                        updated_at        = now()
-                    WHERE municipio_ibge = :municipioIbge
+                    INSERT INTO dim_urbanizacao (municipio_ibge, ano, populacao_urbana, populacao_rural, taxa_urbanizacao, created_at, updated_at)
+                    VALUES (:municipioIbge, :ano, :populacaoUrbana, :populacaoRural,
+                            CASE
+                                WHEN :populacaoUrbana + :populacaoRural > 0
+                                THEN ROUND((CAST(:populacaoUrbana AS decimal) / (:populacaoUrbana + :populacaoRural)) * 100, 4)
+                                ELSE NULL
+                            END,
+                            now(), now())
+                    ON CONFLICT (municipio_ibge, ano) DO UPDATE
+                        SET populacao_urbana  = EXCLUDED.populacao_urbana,
+                            populacao_rural   = EXCLUDED.populacao_rural,
+                            taxa_urbanizacao  = EXCLUDED.taxa_urbanizacao,
+                            updated_at        = now()
                     """)
+                    .setParameter("municipioIbge", dto.municipioIbge())
+                    .setParameter("ano", ano)
                     .setParameter("populacaoUrbana", dto.populacaoUrbana())
                     .setParameter("populacaoRural", dto.populacaoRural())
-                    .setParameter("municipioIbge", dto.municipioIbge())
                     .executeUpdate();
         }
         return updated;
     }
 
     @Transactional
-    public int persistPib(List<IbgePibDTO> records) {
+    public int persistPib(List<IbgePibDTO> records, int ano) {
         int updated = 0;
         for (IbgePibDTO dto : records) {
             BigDecimal pibReais = dto.pibMilReais().multiply(new BigDecimal("1000"));
             updated += entityManager.createNativeQuery("""
-                    UPDATE dim_municipio
-                    SET pib            = :pib,
-                        pib_per_capita = CASE
-                            WHEN populacao IS NOT NULL AND populacao > 0
-                            THEN :pib / populacao
-                            ELSE NULL
-                        END,
-                        updated_at = now()
-                    WHERE municipio_ibge = :municipioIbge
+                    INSERT INTO dim_pib (municipio_ibge, ano, pib, pib_per_capita, created_at, updated_at)
+                    VALUES (:municipioIbge, :ano, :pib,
+                            (SELECT CASE WHEN p.populacao IS NOT NULL AND p.populacao > 0
+                                         THEN :pib / p.populacao
+                                         ELSE NULL
+                                    END
+                             FROM dim_populacao p
+                             WHERE p.municipio_ibge = :municipioIbge
+                             ORDER BY p.ano DESC LIMIT 1),
+                            now(), now())
+                    ON CONFLICT (municipio_ibge, ano) DO UPDATE
+                        SET pib            = EXCLUDED.pib,
+                            pib_per_capita = EXCLUDED.pib_per_capita,
+                            updated_at     = now()
                     """)
-                    .setParameter("pib", pibReais)
                     .setParameter("municipioIbge", dto.municipioIbge())
+                    .setParameter("ano", ano)
+                    .setParameter("pib", pibReais)
                     .executeUpdate();
         }
         return updated;
     }
 
     @Transactional
-    public int persistIdhm(List<IidhmDTO> records) {
+    public int persistIdhm(List<IidhmDTO> records, int ano) {
         int updated = 0;
         for (IidhmDTO dto : records) {
             updated += entityManager.createNativeQuery("""
-                    UPDATE dim_municipio
-                    SET idhm             = :idhm,
-                        idhm_longevidade = :idhmLongevidade,
-                        idhm_educacao    = :idhmEducacao,
-                        idhm_renda       = :idhmRenda,
-                        updated_at       = now()
-                    WHERE UPPER(TRIM(estado)) = UPPER(TRIM(:nomeEstado))
+                    INSERT INTO dim_idhm (municipio_ibge, ano, idhm, idhm_longevidade, idhm_educacao, idhm_renda, created_at, updated_at)
+                    SELECT dm.municipio_ibge, :ano, :idhm, :idhmLongevidade, :idhmEducacao, :idhmRenda, now(), now()
+                    FROM dim_municipio dm
+                    WHERE UPPER(TRIM(dm.estado)) = UPPER(TRIM(:nomeEstado))
+                    ON CONFLICT (municipio_ibge, ano) DO UPDATE
+                        SET idhm             = EXCLUDED.idhm,
+                            idhm_longevidade = EXCLUDED.idhm_longevidade,
+                            idhm_educacao    = EXCLUDED.idhm_educacao,
+                            idhm_renda       = EXCLUDED.idhm_renda,
+                            updated_at       = now()
                     """)
+                    .setParameter("ano", ano)
                     .setParameter("idhm", dto.idhm())
                     .setParameter("idhmLongevidade", dto.idhmLongevidade())
                     .setParameter("idhmEducacao", dto.idhmEducacao())

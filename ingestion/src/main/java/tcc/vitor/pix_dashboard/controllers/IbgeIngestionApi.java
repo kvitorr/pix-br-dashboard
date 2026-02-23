@@ -50,7 +50,7 @@ public interface IbgeIngestionApi {
 
     @Operation(
             summary = "Ingerir dados de PIB do IBGE",
-            description = "Dispara o processo de ingestão de dados de PIB por município a partir da API SIDRA do IBGE.",
+            description = "Dispara o processo de ingestão de dados de PIB por município a partir da API SIDRA do IBGE para o ano especificado.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -72,13 +72,19 @@ public interface IbgeIngestionApi {
                     )
             }
     )
-    ResponseEntity<Map<String, Object>> ingestPib();
+    ResponseEntity<Map<String, Object>> ingestPib(
+            @Parameter(
+                    description = "Ano de referência para os dados de PIB (ex: 2023)",
+                    required = true,
+                    example = "2023"
+            )
+            @RequestParam String ano);
 
     @Operation(
-            summary = "Ingerir dados de urbanização do IBGE (Censo 2022)",
+            summary = "Ingerir dados de urbanização do IBGE",
             description = """
                     Dispara o processo de ingestão de dados de população urbana e rural por município
-                    a partir da tabela 9923 do SIDRA (Censo Demográfico 2022).
+                    a partir da tabela 9923 do SIDRA (Censo Demográfico).
                     Calcula e persiste a taxa de urbanização (%) além dos valores absolutos de população urbana e rural.
                     """,
             responses = {
@@ -102,7 +108,13 @@ public interface IbgeIngestionApi {
                     )
             }
     )
-    ResponseEntity<Map<String, Object>> ingestUrbanizacao();
+    ResponseEntity<Map<String, Object>> ingestUrbanizacao(
+            @Parameter(
+                    description = "Ano de referência para os dados de urbanização (ex: 2022)",
+                    required = true,
+                    example = "2022"
+            )
+            @RequestParam String ano);
 
     @Operation(
             summary = "Ingerir dados de IDHM a partir de CSV estadual",
@@ -139,5 +151,11 @@ public interface IbgeIngestionApi {
                     description = "Arquivo CSV com dados de IDHM estadual (separado por tabulação)",
                     required = true
             )
-            @RequestParam("file") MultipartFile file);
+            @RequestParam("file") MultipartFile file,
+            @Parameter(
+                    description = "Ano de referência para os dados de IDHM (ex: 2021)",
+                    required = true,
+                    example = "2021"
+            )
+            @RequestParam String ano);
 }

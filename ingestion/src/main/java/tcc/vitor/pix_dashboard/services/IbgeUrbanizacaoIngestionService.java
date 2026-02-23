@@ -25,21 +25,24 @@ public class IbgeUrbanizacaoIngestionService {
         this.ingestionService = ingestionService;
     }
 
-    public IngestionRun ingest() {
-        log.atInfo().log("Iniciando ingestao de taxa de urbanizacao (Censo 2022)");
+    public IngestionRun ingest(String ano) {
+        log.atInfo()
+                .addKeyValue("ano", ano)
+                .log("Iniciando ingestao de taxa de urbanizacao");
 
-        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_URBANIZACAO, null);
+        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_URBANIZACAO, ano);
         long startTime = System.currentTimeMillis();
 
         try {
             List<IbgeUrbanizacaoDTO> records = ibgeUrbanizacaoClient.fetchAll();
 
-            int updated = ingestionService.persistUrbanizacao(records);
+            int updated = ingestionService.persistUrbanizacao(records, Integer.parseInt(ano));
 
             long durationMs = System.currentTimeMillis() - startTime;
             ingestionService.markAsSuccess(run, records.size(), updated);
 
             log.atInfo()
+                    .addKeyValue("ano", ano)
                     .addKeyValue("totalMunicipios", records.size())
                     .addKeyValue("updated", updated)
                     .addKeyValue("durationMs", durationMs)
@@ -52,6 +55,7 @@ public class IbgeUrbanizacaoIngestionService {
             ingestionService.markAsFailed(run, "IBGE_API_ERROR", e.getMessage());
 
             log.atError()
+                    .addKeyValue("ano", ano)
                     .addKeyValue("error", e.getMessage())
                     .addKeyValue("durationMs", durationMs)
                     .log("Falha na ingestao de urbanizacao");
@@ -62,6 +66,7 @@ public class IbgeUrbanizacaoIngestionService {
             ingestionService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
 
             log.atError()
+                    .addKeyValue("ano", ano)
                     .addKeyValue("error", e.getMessage())
                     .addKeyValue("durationMs", durationMs)
                     .log("Erro inesperado na ingestao de urbanizacao");

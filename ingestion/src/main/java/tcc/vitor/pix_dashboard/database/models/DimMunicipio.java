@@ -2,7 +2,6 @@ package tcc.vitor.pix_dashboard.database.models;
 
 import jakarta.persistence.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,36 +26,6 @@ public class DimMunicipio {
 
     @Column(name = "regiao")
     private String regiao;
-
-    @Column(name = "populacao")
-    private Integer populacao;
-
-    @Column(name = "pib")
-    private BigDecimal pib;
-
-    @Column(name = "pib_per_capita")
-    private BigDecimal pibPerCapita;
-
-    @Column(name = "populacao_urbana")
-    private Integer populacaoUrbana;
-
-    @Column(name = "populacao_rural")
-    private Integer populacaoRural;
-
-    @Column(name = "idhm")
-    private BigDecimal idhm;
-
-    @Column(name = "idhm_longevidade")
-    private BigDecimal idhmLongevidade;
-
-    @Column(name = "idhm_educacao")
-    private BigDecimal idhmEducacao;
-
-    @Column(name = "idhm_renda")
-    private BigDecimal idhmRenda;
-
-    @Column(name = "taxa_urbanizacao")
-    private BigDecimal taxaUrbanizacao;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -121,86 +90,6 @@ public class DimMunicipio {
 
     public void setRegiao(String regiao) {
         this.regiao = regiao;
-    }
-
-    public Integer getPopulacao() {
-        return populacao;
-    }
-
-    public void setPopulacao(Integer populacao) {
-        this.populacao = populacao;
-    }
-
-    public BigDecimal getPib() {
-        return pib;
-    }
-
-    public void setPib(BigDecimal pib) {
-        this.pib = pib;
-    }
-
-    public BigDecimal getPibPerCapita() {
-        return pibPerCapita;
-    }
-
-    public void setPibPerCapita(BigDecimal pibPerCapita) {
-        this.pibPerCapita = pibPerCapita;
-    }
-
-    public Integer getPopulacaoUrbana() {
-        return populacaoUrbana;
-    }
-
-    public void setPopulacaoUrbana(Integer populacaoUrbana) {
-        this.populacaoUrbana = populacaoUrbana;
-    }
-
-    public Integer getPopulacaoRural() {
-        return populacaoRural;
-    }
-
-    public void setPopulacaoRural(Integer populacaoRural) {
-        this.populacaoRural = populacaoRural;
-    }
-
-    public BigDecimal getIdhm() {
-        return idhm;
-    }
-
-    public void setIdhm(BigDecimal idhm) {
-        this.idhm = idhm;
-    }
-
-    public BigDecimal getIdhmLongevidade() {
-        return idhmLongevidade;
-    }
-
-    public void setIdhmLongevidade(BigDecimal idhmLongevidade) {
-        this.idhmLongevidade = idhmLongevidade;
-    }
-
-    public BigDecimal getIdhmEducacao() {
-        return idhmEducacao;
-    }
-
-    public void setIdhmEducacao(BigDecimal idhmEducacao) {
-        this.idhmEducacao = idhmEducacao;
-    }
-
-    public BigDecimal getIdhmRenda() {
-        return idhmRenda;
-    }
-
-    public void setIdhmRenda(BigDecimal idhmRenda) {
-        this.idhmRenda = idhmRenda;
-    }
-
-    public BigDecimal getTaxaUrbanizacao() {
-        return taxaUrbanizacao;
-    }
-
-    public void setTaxaUrbanizacao(BigDecimal taxaUrbanizacao) {
-        this.taxaUrbanizacao = taxaUrbanizacao;
     }
 
     public LocalDateTime getCreatedAt() {
