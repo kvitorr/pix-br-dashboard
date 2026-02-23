@@ -23,7 +23,7 @@ O projeto coleta, consolida e persiste dados socioeconômicos municipais e trans
 
 ## Contexto e Objetivo
 
-Este serviço compõe a etapa de **coleta e preparação de dados** do TCC. O objetivo é enriquecer a tabela `dim_municipio` com variáveis socioeconômicas e cruzá-la com os dados transacionais mensais do Pix (`fact_pix_municipio_mes`), viabilizando análises de correlação entre adoção do Pix e indicadores como PIB per capita, IDHM e taxa de urbanização em nível municipal.
+Este serviço compõe a etapa de **coleta e preparação de dados** do TCC. O objetivo é coletar variáveis socioeconômicas em tabelas dimensionais independentes (`dim_populacao`, `dim_pib`, `dim_urbanizacao`, `dim_idhm`) e cruzá-las com os dados transacionais mensais do Pix (`fact_pix_municipio_mes`) via `dim_municipio`, viabilizando análises de correlação entre adoção do Pix e indicadores como PIB per capita, IDHM e taxa de urbanização em nível municipal. Cada indicador é armazenado com seu ano de referência, permitindo séries históricas.
 
 ---
 
@@ -92,9 +92,9 @@ Cada execução de ingestão cria um registro em `ingestion_run` com:
 
 ## Modelo de Dados
 
-### `dim_municipio` — Dimensão de Municípios
+### `dim_municipio` — Dimensão de Municípios (cadastral)
 
-Tabela dimensão com dados cadastrais e socioeconômicos dos ~5.570 municípios brasileiros.
+Tabela dimensão com dados cadastrais dos ~5.570 municípios brasileiros. Os indicadores socioeconômicos são armazenados em tabelas dimensionais separadas, cada uma com chave composta `(municipio_ibge, ano)`.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
@@ -104,18 +104,54 @@ Tabela dimensão com dados cadastrais e socioeconômicos dos ~5.570 municípios 
 | `estado` | VARCHAR | Nome do estado |
 | `sigla_regiao` | VARCHAR | Sigla da região (N, NE, CO, SE, S) |
 | `regiao` | VARCHAR | Nome da região |
-| `populacao` | INTEGER | População total (IBGE) |
-| `pib` | DECIMAL | PIB em reais |
-| `pib_per_capita` | DECIMAL | PIB per capita em reais |
-| `populacao_urbana` | INTEGER | População urbana (Censo 2022) |
-| `populacao_rural` | INTEGER | População rural (Censo 2022) |
-| `taxa_urbanizacao` | DECIMAL | Taxa de urbanização em % |
-| `idhm` | DECIMAL(6,4) | IDHM geral (dado estadual) |
-| `idhm_longevidade` | DECIMAL(6,4) | IDHM Longevidade (dado estadual) |
-| `idhm_educacao` | DECIMAL(6,4) | IDHM Educação (dado estadual) |
-| `idhm_renda` | DECIMAL(6,4) | IDHM Renda (dado estadual) |
 | `created_at` | TIMESTAMP | Data de criação do registro |
 | `updated_at` | TIMESTAMP | Data da última atualização |
+
+### `dim_populacao` — População Municipal
+
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `municipio_ibge` | VARCHAR (PK, FK) | Código IBGE do município |
+| `ano` | INTEGER (PK) | Ano de referência do dado |
+| `populacao` | INTEGER | População total |
+| `created_at` | TIMESTAMP | Data de criação |
+| `updated_at` | TIMESTAMP | Data de atualização |
+
+### `dim_pib` — PIB Municipal
+
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `municipio_ibge` | VARCHAR (PK, FK) | Código IBGE do município |
+| `ano` | INTEGER (PK) | Ano de referência do dado |
+| `pib` | DECIMAL(18,2) | PIB em reais |
+| `pib_per_capita` | DECIMAL(18,2) | PIB per capita (calculado na ingestão) |
+| `created_at` | TIMESTAMP | Data de criação |
+| `updated_at` | TIMESTAMP | Data de atualização |
+
+### `dim_urbanizacao` — Urbanização Municipal
+
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `municipio_ibge` | VARCHAR (PK, FK) | Código IBGE do município |
+| `ano` | INTEGER (PK) | Ano de referência do dado |
+| `populacao_urbana` | INTEGER | População urbana |
+| `populacao_rural` | INTEGER | População rural |
+| `taxa_urbanizacao` | DECIMAL(8,4) | Taxa de urbanização em % |
+| `created_at` | TIMESTAMP | Data de criação |
+| `updated_at` | TIMESTAMP | Data de atualização |
+
+### `dim_idhm` — IDHM (dado estadual imputado por município)
+
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `municipio_ibge` | VARCHAR (PK, FK) | Código IBGE do município |
+| `ano` | INTEGER (PK) | Ano de referência do dado |
+| `idhm` | DECIMAL(6,4) | IDHM geral |
+| `idhm_longevidade` | DECIMAL(6,4) | IDHM Longevidade |
+| `idhm_educacao` | DECIMAL(6,4) | IDHM Educação |
+| `idhm_renda` | DECIMAL(6,4) | IDHM Renda |
+| `created_at` | TIMESTAMP | Data de criação |
+| `updated_at` | TIMESTAMP | Data de atualização |
 
 ### `fact_pix_municipio_mes` — Fato de Transações Pix
 
@@ -260,25 +296,38 @@ Ingere dados populacionais por município a partir da API IBGE.
 
 #### `POST /api/ingestion/ibge-pib`
 
-Ingere dados de PIB por município a partir do SIDRA (tabela 5938). Sem parâmetros.
+Ingere dados de PIB por município a partir do SIDRA (tabela 5938). O PIB per capita é calculado automaticamente usando a população mais recente disponível em `dim_populacao`.
+
+**Parâmetros:**
+
+| Nome | Tipo | Obrigatório | Exemplo | Descrição |
+|---|---|---|---|---|
+| `ano` | query string | Sim | `2023` | Ano de referência do dado |
 
 ---
 
 #### `POST /api/ingestion/ibge-urbanizacao`
 
-Ingere população urbana e rural por município (Censo 2022, tabela 9923) e calcula a taxa de urbanização. Sem parâmetros.
+Ingere população urbana e rural por município (tabela 9923) e calcula a taxa de urbanização.
+
+**Parâmetros:**
+
+| Nome | Tipo | Obrigatório | Exemplo | Descrição |
+|---|---|---|---|---|
+| `ano` | query string | Sim | `2022` | Ano de referência do dado |
 
 ---
 
 #### `POST /api/ingestion/idhm`
 
-Ingere dados de IDHM estadual a partir de arquivo CSV enviado via upload.
+Ingere dados de IDHM estadual a partir de arquivo TSV enviado via upload.
 
 **Parâmetros:**
 
-| Nome | Tipo | Obrigatório | Descrição |
-|---|---|---|---|
-| `file` | multipart/form-data | Sim | Arquivo TSV com colunas: `ANO`, `AGREGACAO`, `CODIGO`, `NOME`, `IDHM`, `IDHM_L`, `IDHM_E`, `IDHM_R` |
+| Nome | Tipo | Obrigatório | Exemplo | Descrição |
+|---|---|---|---|---|
+| `file` | multipart/form-data | Sim | — | Arquivo TSV com colunas: `ANO`, `AGREGACAO`, `CODIGO`, `NOME`, `IDHM`, `IDHM_L`, `IDHM_E`, `IDHM_R` |
+| `ano` | query string | Sim | `2021` | Ano de referência do dado |
 
 ---
 
@@ -334,17 +383,17 @@ Execute os endpoints na seguinte ordem para garantir consistência dos dados:
    → Popula dim_municipio e fact_pix_municipio_mes com dados de uma competência.
    → Repita para cada mês desejado (ex: 202101 até 202412).
 
-2. POST /api/ingestion/ibge-populacao?ano=2022
-   → Atualiza dim_municipio.populacao
+2. POST /api/ingestion/ibge-populacao?ano=2026
+   → Insere/atualiza dim_populacao (necessário antes do PIB para cálculo do per capita)
 
-3. POST /api/ingestion/ibge-pib
-   → Atualiza dim_municipio.pib e dim_municipio.pib_per_capita
+3. POST /api/ingestion/ibge-pib?ano=2023
+   → Insere/atualiza dim_pib (pib_per_capita calculado a partir de dim_populacao)
 
-4. POST /api/ingestion/ibge-urbanizacao
-   → Atualiza dim_municipio.populacao_urbana, populacao_rural, taxa_urbanizacao
+4. POST /api/ingestion/ibge-urbanizacao?ano=2022
+   → Insere/atualiza dim_urbanizacao (populacao_urbana, populacao_rural, taxa_urbanizacao)
 
-5. POST /api/ingestion/idhm  (com upload do arquivo TSV do Atlas Brasil)
-   → Atualiza dim_municipio.idhm, idhm_longevidade, idhm_educacao, idhm_renda
+5. POST /api/ingestion/idhm?ano=2021  (com upload do arquivo TSV do Atlas Brasil)
+   → Insere/atualiza dim_idhm (idhm, idhm_longevidade, idhm_educacao, idhm_renda)
 ```
 
 ---
@@ -355,32 +404,34 @@ Após a ingestão, use as queries abaixo para verificar a qualidade dos dados:
 
 ```sql
 -- 1. Cobertura populacional
-SELECT COUNT(*) FROM dim_municipio WHERE populacao IS NOT NULL;
+SELECT COUNT(*) FROM dim_populacao WHERE populacao IS NOT NULL;
 -- Esperado: ~5.570
 
 -- 2. Cobertura de urbanização
-SELECT COUNT(*) FROM dim_municipio WHERE taxa_urbanizacao IS NOT NULL;
+SELECT COUNT(*) FROM dim_urbanizacao WHERE taxa_urbanizacao IS NOT NULL;
 -- Esperado: ~5.570
 
 -- 3. Sanidade: taxa deve bater com o cálculo
-SELECT municipio_ibge, populacao_urbana, populacao_rural, taxa_urbanizacao,
+SELECT municipio_ibge, ano, populacao_urbana, populacao_rural, taxa_urbanizacao,
        ROUND(populacao_urbana::decimal / (populacao_urbana + populacao_rural) * 100, 2) AS taxa_calculada
-FROM dim_municipio WHERE populacao_urbana IS NOT NULL LIMIT 10;
+FROM dim_urbanizacao WHERE populacao_urbana IS NOT NULL LIMIT 10;
 
 -- 4. Cobertura de IDHM (dado estadual imputado por UF)
-SELECT COUNT(*) FROM dim_municipio WHERE idhm IS NOT NULL;
+SELECT COUNT(*) FROM dim_idhm WHERE idhm IS NOT NULL;
 -- Esperado: ~5.570
 
--- 5. Amostra de estados com IDHM distintos
-SELECT DISTINCT estado, idhm, idhm_longevidade, idhm_educacao, idhm_renda
-FROM dim_municipio WHERE idhm IS NOT NULL
-ORDER BY idhm DESC LIMIT 10;
+-- 5. Amostra de IDHM por estado
+SELECT DISTINCT dm.estado, di.ano, di.idhm, di.idhm_longevidade, di.idhm_educacao, di.idhm_renda
+FROM dim_idhm di
+JOIN dim_municipio dm ON di.municipio_ibge = dm.municipio_ibge
+WHERE di.idhm IS NOT NULL
+ORDER BY di.idhm DESC LIMIT 10;
 
 -- 6. Municípios do Pix sem IDHM (deve ser 0 após ingestão completa)
 SELECT COUNT(DISTINCT f.municipio_ibge)
 FROM fact_pix_municipio_mes f
-JOIN dim_municipio d ON f.municipio_ibge = d.municipio_ibge
-WHERE d.idhm IS NULL;
+LEFT JOIN dim_idhm di ON f.municipio_ibge = di.municipio_ibge
+WHERE di.idhm IS NULL;
 
 -- 7. Histórico de ingestões
 SELECT source, status, records_fetched, records_upserted, started_at, ended_at
@@ -409,3 +460,4 @@ Dados de cobertura de internet em nível municipal não foram incluídos na aná
 | V1 | `V1__create_tables.sql` | Criação das tabelas `ingestion_run`, `dim_municipio` e `fact_pix_municipio_mes` com índices |
 | V2 | `V2__add_source_and_unique_constraint.sql` | Adiciona coluna `source` ao `ingestion_run` e constraint única em `fact_pix_municipio_mes` |
 | V3 | `V3__add_urbanizacao_idhm_remove_internet.sql` | Adiciona colunas de urbanização e IDHM, remove `cobertura_internet` |
+| V4 | `V4__split_dim_municipio_into_dimension_tables.sql` | Separa indicadores socioeconômicos em tabelas independentes (`dim_populacao`, `dim_pib`, `dim_urbanizacao`, `dim_idhm`) com PK composta `(municipio_ibge, ano)` |
