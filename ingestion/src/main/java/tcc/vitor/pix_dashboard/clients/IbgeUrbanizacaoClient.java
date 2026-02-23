@@ -39,11 +39,11 @@ public class IbgeUrbanizacaoClient {
      * Busca a população urbana e rural de todos os municípios do Censo 2022 (tabela 9923)
      * e retorna a lista consolidada com o cálculo de taxa de urbanização pronto para persistência.
      */
-    public List<IbgeUrbanizacaoDTO> fetchAll() {
+    public List<IbgeUrbanizacaoDTO> fetchAll(String ano) {
         log.atInfo().log("Buscando dados de populacao urbana e rural do IBGE (Censo 2022, tabela 9923)");
 
-        List<IbgeAgregadosResponse> responseUrbana = fetchWithRetry("1[1]");
-        List<IbgeAgregadosResponse> responseRural = fetchWithRetry("1[2]");
+        List<IbgeAgregadosResponse> responseUrbana = fetchWithRetry("1[1]", ano);
+        List<IbgeAgregadosResponse> responseRural = fetchWithRetry("1[2]", ano);
 
         Map<String, Long> populacaoUrbana = extrairPopulacaoPorMunicipio(responseUrbana);
         Map<String, Long> populacaoRural = extrairPopulacaoPorMunicipio(responseRural);
@@ -92,14 +92,14 @@ public class IbgeUrbanizacaoClient {
         return mapa;
     }
 
-    private List<IbgeAgregadosResponse> fetchWithRetry(String classificacao) {
+    private List<IbgeAgregadosResponse> fetchWithRetry(String classificacao, String ano) {
         int attempt = 0;
         long backoffMs = INITIAL_BACKOFF_MS;
 
         while (true) {
             attempt++;
             try {
-                return fetchPage(classificacao);
+                return fetchPage(classificacao, ano);
             } catch (IbgeRetryableException e) {
                 if (attempt >= MAX_RETRIES) {
                     log.atError()
@@ -124,10 +124,10 @@ public class IbgeUrbanizacaoClient {
         }
     }
 
-    private List<IbgeAgregadosResponse> fetchPage(String classificacao) {
-        // Tabela 9923 — "Populacao residente, por situacao do domicilio" (Censo 2022)
+    private List<IbgeAgregadosResponse> fetchPage(String classificacao, String ano) {
+        // Tabela 9923 — "Populacao residente, por situacao do domicilio
         // classificacao=1[1] = Urbana | classificacao=1[2] = Rural
-        String url = BASE_URL + "/9923/periodos/" + ANO_CENSO + "/variaveis?classificacao=" + classificacao + "&localidades=N6[all]";
+        String url = BASE_URL + "/9923/periodos/" + ano + "/variaveis?classificacao=" + classificacao + "&localidades=N6[all]";
 
         return restClient.get()
                 .uri(URI.create(url))

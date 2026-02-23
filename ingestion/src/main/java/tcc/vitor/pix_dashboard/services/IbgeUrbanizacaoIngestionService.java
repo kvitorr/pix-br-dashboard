@@ -34,7 +34,7 @@ public class IbgeUrbanizacaoIngestionService {
         long startTime = System.currentTimeMillis();
 
         try {
-            List<IbgeUrbanizacaoDTO> records = ibgeUrbanizacaoClient.fetchAll();
+            List<IbgeUrbanizacaoDTO> records = ibgeUrbanizacaoClient.fetchAll(ano);
 
             int updated = ingestionService.persistUrbanizacao(records, Integer.parseInt(ano));
 

@@ -34,7 +34,7 @@ public class IbgePibIngestionService {
         long startTime = System.currentTimeMillis();
 
         try {
-            List<IbgePibDTO> records = ibgePibClient.fetchAll();
+            List<IbgePibDTO> records = ibgePibClient.fetchAll(ano);
 
             int upserted = ingestionService.persistPib(records, Integer.parseInt(ano));
 

@@ -31,10 +31,10 @@ public class IbgePibClient {
                 .build();
     }
 
-    public List<IbgePibDTO> fetchAll() {
+    public List<IbgePibDTO> fetchAll(String ano) {
         log.atInfo().log("Buscando dados de PIB do IBGE/SIDRA");
 
-        SidraRow[] response = fetchWithRetry();
+        SidraRow[] response = fetchWithRetry(ano);
 
         if (response == null || response.length <= 1) {
             return List.of();
@@ -59,14 +59,14 @@ public class IbgePibClient {
         return records;
     }
 
-    private SidraRow[] fetchWithRetry() {
+    private SidraRow[] fetchWithRetry(String ano) {
         int attempt = 0;
         long backoffMs = INITIAL_BACKOFF_MS;
 
         while (true) {
             attempt++;
             try {
-                return fetchPage();
+                return fetchPage(ano);
             } catch (IbgeRetryableException e) {
                 if (attempt >= MAX_RETRIES) {
                     log.atError()
@@ -89,10 +89,12 @@ public class IbgePibClient {
         }
     }
 
-    private SidraRow[] fetchPage() {
+    private SidraRow[] fetchPage(String ano) {
+        String url = "/values/t/5938/n6/all/v/37/p/" + ano;
+
         return restClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/values/t/5938/n6/all/v/37/p/last")
+                        .path(url)
                         .build())
                 .retrieve()
                 .onStatus(status -> status.value() == 429 || status.value() == 503, (req, res) -> {
