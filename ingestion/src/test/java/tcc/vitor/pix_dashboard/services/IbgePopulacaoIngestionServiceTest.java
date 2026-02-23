@@ -51,14 +51,14 @@ class IbgePopulacaoIngestionServiceTest {
         when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenReturn(List.of(sampleDto));
-        when(ingestionService.persistPopulacao(any())).thenReturn(1);
+        when(ingestionService.persistPopulacao(any(), eq(2024))).thenReturn(1);
 
         IngestionRun result = ibgePopulacaoIngestionService.ingest("2024");
 
         assertThat(result).isEqualTo(runningRun);
         verify(ingestionService).createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024");
         verify(ibgePopulacaoClient).fetchAll("2024");
-        verify(ingestionService).persistPopulacao(List.of(sampleDto));
+        verify(ingestionService).persistPopulacao(List.of(sampleDto), 2024);
         verify(ingestionService).markAsSuccess(runningRun, 1, 1);
         verify(ingestionService, never()).markAsFailed(any(), anyString(), anyString());
     }
@@ -82,7 +82,7 @@ class IbgePopulacaoIngestionServiceTest {
         when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenReturn(List.of());
-        when(ingestionService.persistPopulacao(any())).thenReturn(0);
+        when(ingestionService.persistPopulacao(any(), eq(2024))).thenReturn(0);
 
         ibgePopulacaoIngestionService.ingest("2024");
 
@@ -94,7 +94,7 @@ class IbgePopulacaoIngestionServiceTest {
         when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenReturn(List.of(sampleDto));
-        when(ingestionService.persistPopulacao(any()))
+        when(ingestionService.persistPopulacao(any(), anyInt()))
                 .thenThrow(new RuntimeException("DB connection lost"));
 
         assertThatThrownBy(() -> ibgePopulacaoIngestionService.ingest("2024"))

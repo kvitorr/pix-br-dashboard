@@ -24,19 +24,20 @@ public class IidhmIngestionService {
         this.ingestionService = ingestionService;
     }
 
-    public IngestionRun ingest(MultipartFile file) {
+    public IngestionRun ingest(MultipartFile file, String ano) {
         log.atInfo()
                 .addKeyValue("nomeArquivo", file.getOriginalFilename())
                 .addKeyValue("tamanhoBytes", file.getSize())
+                .addKeyValue("ano", ano)
                 .log("Iniciando ingestao de IDHM a partir de CSV estadual");
 
-        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IDHM_ESTADUAL, null);
+        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IDHM_ESTADUAL, ano);
         long startTime = System.currentTimeMillis();
 
         try {
             List<IidhmDTO> records = iidhmCsvParser.parse(file.getInputStream());
 
-            int updated = ingestionService.persistIdhm(records);
+            int updated = ingestionService.persistIdhm(records, Integer.parseInt(ano));
 
             long durationMs = System.currentTimeMillis() - startTime;
             ingestionService.markAsSuccess(run, records.size(), updated);

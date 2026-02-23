@@ -36,7 +36,7 @@ public class IbgePopulacaoIngestionService {
         try {
             List<IbgePopulacaoDTO> records = ibgePopulacaoClient.fetchAll(ano);
 
-            int upserted = ingestionService.persistPopulacao(records);
+            int upserted = ingestionService.persistPopulacao(records, Integer.parseInt(ano));
 
             long durationMs = System.currentTimeMillis() - startTime;
             ingestionService.markAsSuccess(run, records.size(), upserted);

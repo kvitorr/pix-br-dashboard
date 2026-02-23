@@ -43,22 +43,23 @@ public class IbgeIngestionController implements IbgeIngestionApi {
 
     @Override
     @PostMapping("/ibge-pib")
-    public ResponseEntity<Map<String, Object>> ingestPib() {
-        IngestionRun run = ibgePibIngestionService.ingest();
+    public ResponseEntity<Map<String, Object>> ingestPib(@RequestParam String ano) {
+        IngestionRun run = ibgePibIngestionService.ingest(ano);
         return ResponseEntity.ok(buildResponseMap(run));
     }
 
     @Override
     @PostMapping("/ibge-urbanizacao")
-    public ResponseEntity<Map<String, Object>> ingestUrbanizacao() {
-        IngestionRun run = ibgeUrbanizacaoIngestionService.ingest();
+    public ResponseEntity<Map<String, Object>> ingestUrbanizacao(@RequestParam String ano) {
+        IngestionRun run = ibgeUrbanizacaoIngestionService.ingest(ano);
         return ResponseEntity.ok(buildResponseMap(run));
     }
 
     @Override
     @PostMapping(value = "/idhm", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> ingestIdhm(@RequestParam("file") MultipartFile file) {
-        IngestionRun run = iidhmIngestionService.ingest(file);
+    public ResponseEntity<Map<String, Object>> ingestIdhm(@RequestParam("file") MultipartFile file,
+                                                           @RequestParam String ano) {
+        IngestionRun run = iidhmIngestionService.ingest(file, ano);
         return ResponseEntity.ok(buildResponseMap(run));
     }
 

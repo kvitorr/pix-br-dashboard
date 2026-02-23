@@ -25,21 +25,24 @@ public class IbgePibIngestionService {
         this.ingestionService = ingestionService;
     }
 
-    public IngestionRun ingest() {
-        log.atInfo().log("Iniciando ingestao de PIB IBGE/SIDRA");
+    public IngestionRun ingest(String ano) {
+        log.atInfo()
+                .addKeyValue("ano", ano)
+                .log("Iniciando ingestao de PIB IBGE/SIDRA");
 
-        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, null);
+        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, ano);
         long startTime = System.currentTimeMillis();
 
         try {
             List<IbgePibDTO> records = ibgePibClient.fetchAll();
 
-            int upserted = ingestionService.persistPib(records);
+            int upserted = ingestionService.persistPib(records, Integer.parseInt(ano));
 
             long durationMs = System.currentTimeMillis() - startTime;
             ingestionService.markAsSuccess(run, records.size(), upserted);
 
             log.atInfo()
+                    .addKeyValue("ano", ano)
                     .addKeyValue("totalRecords", records.size())
                     .addKeyValue("upserted", upserted)
                     .addKeyValue("durationMs", durationMs)
@@ -52,6 +55,7 @@ public class IbgePibIngestionService {
             ingestionService.markAsFailed(run, "IBGE_API_ERROR", e.getMessage());
 
             log.atError()
+                    .addKeyValue("ano", ano)
                     .addKeyValue("error", e.getMessage())
                     .addKeyValue("durationMs", durationMs)
                     .log("Falha na ingestao de PIB");
@@ -62,6 +66,7 @@ public class IbgePibIngestionService {
             ingestionService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
 
             log.atError()
+                    .addKeyValue("ano", ano)
                     .addKeyValue("error", e.getMessage())
                     .addKeyValue("durationMs", durationMs)
                     .log("Erro inesperado na ingestao de PIB");
