@@ -185,6 +185,7 @@ Tabela fato com os dados transacionais mensais do Pix por município, provenient
 - **URL:** `https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/{ano}/variaveis/9324?localidades=N6[all]`
 - **Conteúdo:** Estimativa/Censo de população total por município
 - **Parâmetro:** `ano` (ex: `2022`)
+- **Ano de referência utilizado:** 2026 (população estimada — dado mais recente disponível)
 
 ### 3. IBGE SIDRA — PIB Municipal
 
@@ -192,6 +193,7 @@ Tabela fato com os dados transacionais mensais do Pix por município, provenient
 - **URL:** `https://apisidra.ibge.gov.br/values/t/5938/n6/all/v/37/p/last`
 - **Tabela:** 5938 — PIB dos Municípios
 - **Conteúdo:** Valor adicionado bruto total, em milhares de reais (convertido para reais na ingestão)
+- **Ano de referência utilizado:** 2023 (dado mais recente disponível)
 
 ### 4. IBGE SIDRA — Taxa de Urbanização (Censo 2022)
 
@@ -201,6 +203,7 @@ Tabela fato com os dados transacionais mensais do Pix por município, provenient
   - População Urbana: `https://servicodados.ibge.gov.br/api/v3/agregados/9923/periodos/2022/variaveis?classificacao=1[1]&localidades=N6[all]`
   - População Rural: `https://servicodados.ibge.gov.br/api/v3/agregados/9923/periodos/2022/variaveis?classificacao=1[2]&localidades=N6[all]`
 - **Cálculo:** `taxa_urbanizacao = (pop_urbana / (pop_urbana + pop_rural)) * 100`
+- **Ano de referência utilizado:** 2022 (dado mais recente disponível)
 
 ### 5. Atlas do Desenvolvimento Humano — IDHM Estadual
 
@@ -208,6 +211,7 @@ Tabela fato com os dados transacionais mensais do Pix por município, provenient
 - **Formato:** Arquivo CSV separado por tabulação (TSV), upload manual via endpoint
 - **Colunas esperadas:** `ANO`, `AGREGACAO`, `CODIGO`, `NOME`, `IDHM`, `IDHM_L`, `IDHM_E`, `IDHM_R`
 - **Granularidade:** Estadual (imputado a todos os municípios do respectivo estado)
+- **Ano de referência utilizado:** 2021 (dado mais recente disponível)
 - **⚠️ Limitação:** Dado estadual, não municipal — ver seção [Limitações do Estudo](#limitações-do-estudo)
 
 ---
