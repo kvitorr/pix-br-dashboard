@@ -47,10 +47,19 @@ public class IbgePopulacaoClient {
                 .filter(serie -> serie.serie().get(ano) != null
                         && !serie.serie().get(ano).isBlank()
                         && !serie.serie().get(ano).equals("-"))
-                .map(serie -> new IbgePopulacaoDTO(
-                        serie.localidade().id(),
-                        Integer.parseInt(serie.serie().get(ano))
-                ))
+                .map(serie -> {
+                    int pop;
+                    try {
+                        pop = Integer.parseInt(serie.serie().get(ano));
+                    } catch (NumberFormatException e) {
+                        log.atWarn()
+                                .addKeyValue("municipioIbge", serie.localidade().id())
+                                .addKeyValue("valorRecebido", serie.serie().get(ano))
+                                .log("Valor de populacao invalido, substituindo por 0");
+                        pop = 0;
+                    }
+                    return new IbgePopulacaoDTO(serie.localidade().id(), pop);
+                })
                 .toList();
 
         log.atInfo()
