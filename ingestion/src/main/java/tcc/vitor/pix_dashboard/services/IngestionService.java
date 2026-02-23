@@ -119,7 +119,7 @@ public class IngestionService {
                         populacao_rural   = :populacaoRural,
                         taxa_urbanizacao  = CASE
                             WHEN :populacaoUrbana + :populacaoRural > 0
-                            THEN ROUND((:populacaoUrbana::decimal / (:populacaoUrbana + :populacaoRural)) * 100, 4)
+                            THEN ROUND((CAST(:populacaoUrbana AS decimal) / (:populacaoUrbana + :populacaoRural)) * 100, 4)
                             ELSE NULL
                         END,
                         updated_at        = now()
