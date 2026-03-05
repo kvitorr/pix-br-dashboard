@@ -9,8 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.Map;
+import tcc.vitor.pix_dashboard.services.dto.IngestionRunResponse;
 
 @Tag(name = "BACEN PIX", description = "Ingestão de dados de transações PIX do Banco Central")
 public interface BacenPixIngestionApi {
@@ -24,7 +23,7 @@ public interface BacenPixIngestionApi {
                             description = "Ingestão realizada com sucesso",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = Map.class),
+                                    schema = @Schema(implementation = IngestionRunResponse.class),
                                     examples = @ExampleObject(
                                             value = """
                                                     {
@@ -39,7 +38,7 @@ public interface BacenPixIngestionApi {
                     )
             }
     )
-    ResponseEntity<Map<String, Object>> ingestBacenPix(
+    ResponseEntity<IngestionRunResponse> ingestBacenPix(
             @Parameter(
                     description = "Período da base de dados no formato AAAAMM (ex: 202401 para janeiro de 2024)",
                     required = true,

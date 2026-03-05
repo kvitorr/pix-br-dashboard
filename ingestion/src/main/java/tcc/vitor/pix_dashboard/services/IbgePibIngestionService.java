@@ -30,7 +30,10 @@ public class IbgePibIngestionService {
                 .addKeyValue("ano", ano)
                 .log("Iniciando ingestao de PIB IBGE/SIDRA");
 
-        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_PIB, ano);
+        IngestionRun run = ingestionService.createRunningRecord(
+                IngestionRunSource.IBGE_PIB,
+                ano != null ? "{\"ano\":\"" + ano + "\"}" : "{}"
+        );
         long startTime = System.currentTimeMillis();
 
         try {

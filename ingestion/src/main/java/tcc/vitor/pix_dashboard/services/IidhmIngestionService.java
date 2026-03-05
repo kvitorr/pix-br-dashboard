@@ -31,7 +31,10 @@ public class IidhmIngestionService {
                 .addKeyValue("ano", ano)
                 .log("Iniciando ingestao de IDHM a partir de CSV estadual");
 
-        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IDHM_ESTADUAL, ano);
+        IngestionRun run = ingestionService.createRunningRecord(
+                IngestionRunSource.IDHM_ESTADUAL,
+                ano != null ? "{\"ano\":\"" + ano + "\"}" : "{}"
+        );
         long startTime = System.currentTimeMillis();
 
         try {

@@ -7,8 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.services.BacenPixIngestionService;
-
-import java.util.Map;
+import tcc.vitor.pix_dashboard.services.dto.IngestionRunResponse;
 
 @RestController
 @RequestMapping("/api/ingestion")
@@ -22,16 +21,8 @@ public class BacenPixIngestionController implements BacenPixIngestionApi {
 
     @Override
     @PostMapping("/bacen-pix")
-    public ResponseEntity<Map<String, Object>> ingestBacenPix(@RequestParam String database) {
+    public ResponseEntity<IngestionRunResponse> ingestBacenPix(@RequestParam String database) {
         IngestionRun run = bacenPixIngestionService.ingest(database);
-
-        Map<String, Object> response = Map.of(
-                "ingestionRunId", run.getId(),
-                "status", run.getStatus(),
-                "recordsFetched", run.getRecordsFetched() != null ? run.getRecordsFetched() : 0,
-                "recordsUpserted", run.getRecordsUpserted() != null ? run.getRecordsUpserted() : 0
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(IngestionRunResponse.from(run));
     }
 }

@@ -12,8 +12,7 @@ import tcc.vitor.pix_dashboard.services.IbgePibIngestionService;
 import tcc.vitor.pix_dashboard.services.IbgePopulacaoIngestionService;
 import tcc.vitor.pix_dashboard.services.IbgeUrbanizacaoIngestionService;
 import tcc.vitor.pix_dashboard.services.IidhmIngestionService;
-
-import java.util.Map;
+import tcc.vitor.pix_dashboard.services.dto.IngestionRunResponse;
 
 @RestController
 @RequestMapping("/api/ingestion")
@@ -36,39 +35,30 @@ public class IbgeIngestionController implements IbgeIngestionApi {
 
     @Override
     @PostMapping("/ibge-populacao")
-    public ResponseEntity<Map<String, Object>> ingestPopulacao(@RequestParam String ano) {
+    public ResponseEntity<IngestionRunResponse> ingestPopulacao(@RequestParam String ano) {
         IngestionRun run = ibgePopulacaoIngestionService.ingest(ano);
-        return ResponseEntity.ok(buildResponseMap(run));
+        return ResponseEntity.ok(IngestionRunResponse.from(run));
     }
 
     @Override
     @PostMapping("/ibge-pib")
-    public ResponseEntity<Map<String, Object>> ingestPib(@RequestParam String ano) {
+    public ResponseEntity<IngestionRunResponse> ingestPib(@RequestParam String ano) {
         IngestionRun run = ibgePibIngestionService.ingest(ano);
-        return ResponseEntity.ok(buildResponseMap(run));
+        return ResponseEntity.ok(IngestionRunResponse.from(run));
     }
 
     @Override
     @PostMapping("/ibge-urbanizacao")
-    public ResponseEntity<Map<String, Object>> ingestUrbanizacao(@RequestParam String ano) {
+    public ResponseEntity<IngestionRunResponse> ingestUrbanizacao(@RequestParam String ano) {
         IngestionRun run = ibgeUrbanizacaoIngestionService.ingest(ano);
-        return ResponseEntity.ok(buildResponseMap(run));
+        return ResponseEntity.ok(IngestionRunResponse.from(run));
     }
 
     @Override
     @PostMapping(value = "/idhm", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> ingestIdhm(@RequestParam("file") MultipartFile file,
-                                                           @RequestParam String ano) {
+    public ResponseEntity<IngestionRunResponse> ingestIdhm(@RequestParam("file") MultipartFile file,
+                                                            @RequestParam String ano) {
         IngestionRun run = iidhmIngestionService.ingest(file, ano);
-        return ResponseEntity.ok(buildResponseMap(run));
-    }
-
-    private Map<String, Object> buildResponseMap(IngestionRun run) {
-        return Map.of(
-                "ingestionRunId", run.getId(),
-                "status", run.getStatus(),
-                "recordsFetched", run.getRecordsFetched() != null ? run.getRecordsFetched() : 0,
-                "recordsUpserted", run.getRecordsUpserted() != null ? run.getRecordsUpserted() : 0
-        );
+        return ResponseEntity.ok(IngestionRunResponse.from(run));
     }
 }

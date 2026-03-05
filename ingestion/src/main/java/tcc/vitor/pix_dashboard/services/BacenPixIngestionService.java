@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tcc.vitor.pix_dashboard.clients.BcbPixClient;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
+import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.exceptions.BcbApiException;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
 
@@ -17,11 +18,14 @@ public class BacenPixIngestionService {
 
     private final BcbPixClient bcbPixClient;
     private final IngestionService ingestionService;
+    private final PixRecordPersister pixRecordPersister;
 
     public BacenPixIngestionService(BcbPixClient bcbPixClient,
-                                    IngestionService ingestionService) {
+                                    IngestionService ingestionService,
+                                    PixRecordPersister pixRecordPersister) {
         this.bcbPixClient = bcbPixClient;
         this.ingestionService = ingestionService;
+        this.pixRecordPersister = pixRecordPersister;
     }
 
     public IngestionRun ingest(String database) {
@@ -29,13 +33,16 @@ public class BacenPixIngestionService {
                 .addKeyValue("database", database)
                 .log("Iniciando ingestao para o periodo");
 
-        IngestionRun run = ingestionService.createRunningRecord(database);
+        IngestionRun run = ingestionService.createRunningRecord(
+                IngestionRunSource.BACEN_PIX,
+                "{\"database\":\"" + database + "\"}"
+        );
         long startTime = System.currentTimeMillis();
 
         try {
             List<PixTransacaoMunicipioDTO> records = bcbPixClient.fetchAll(database);
 
-            int upserted = ingestionService.persistRecords(records, run);
+            int upserted = pixRecordPersister.persistRecords(records, run.getId());
 
             long durationMs = System.currentTimeMillis() - startTime;
             ingestionService.markAsSuccess(run, records.size(), upserted);
