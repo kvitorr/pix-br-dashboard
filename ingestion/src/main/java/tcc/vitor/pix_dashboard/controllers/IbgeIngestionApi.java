@@ -10,8 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Map;
+import tcc.vitor.pix_dashboard.services.dto.IngestionRunResponse;
 
 @Tag(name = "IBGE", description = "Ingestão de dados populacionais, PIB, urbanização e IDHM do IBGE")
 public interface IbgeIngestionApi {
@@ -25,7 +24,7 @@ public interface IbgeIngestionApi {
                             description = "Ingestão realizada com sucesso",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = Map.class),
+                                    schema = @Schema(implementation = IngestionRunResponse.class),
                                     examples = @ExampleObject(
                                             value = """
                                                     {
@@ -40,7 +39,7 @@ public interface IbgeIngestionApi {
                     )
             }
     )
-    ResponseEntity<Map<String, Object>> ingestPopulacao(
+    ResponseEntity<IngestionRunResponse> ingestPopulacao(
             @Parameter(
                     description = "Ano de referência para os dados populacionais (ex: 2022)",
                     required = true,
@@ -57,7 +56,7 @@ public interface IbgeIngestionApi {
                             description = "Ingestão realizada com sucesso",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = Map.class),
+                                    schema = @Schema(implementation = IngestionRunResponse.class),
                                     examples = @ExampleObject(
                                             value = """
                                                     {
@@ -72,7 +71,7 @@ public interface IbgeIngestionApi {
                     )
             }
     )
-    ResponseEntity<Map<String, Object>> ingestPib(
+    ResponseEntity<IngestionRunResponse> ingestPib(
             @Parameter(
                     description = "Ano de referência para os dados de PIB (ex: 2023)",
                     required = true,
@@ -93,7 +92,7 @@ public interface IbgeIngestionApi {
                             description = "Ingestão realizada com sucesso",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = Map.class),
+                                    schema = @Schema(implementation = IngestionRunResponse.class),
                                     examples = @ExampleObject(
                                             value = """
                                                     {
@@ -108,7 +107,7 @@ public interface IbgeIngestionApi {
                     )
             }
     )
-    ResponseEntity<Map<String, Object>> ingestUrbanizacao(
+    ResponseEntity<IngestionRunResponse> ingestUrbanizacao(
             @Parameter(
                     description = "Ano de referência para os dados de urbanização (ex: 2022)",
                     required = true,
@@ -131,7 +130,7 @@ public interface IbgeIngestionApi {
                             description = "Ingestão realizada com sucesso",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = Map.class),
+                                    schema = @Schema(implementation = IngestionRunResponse.class),
                                     examples = @ExampleObject(
                                             value = """
                                                     {
@@ -146,7 +145,7 @@ public interface IbgeIngestionApi {
                     )
             }
     )
-    ResponseEntity<Map<String, Object>> ingestIdhm(
+    ResponseEntity<IngestionRunResponse> ingestIdhm(
             @Parameter(
                     description = "Arquivo CSV com dados de IDHM estadual (separado por tabulação)",
                     required = true

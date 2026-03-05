@@ -48,7 +48,7 @@ class IbgePopulacaoIngestionServiceTest {
 
     @Test
     void ingest_happyPath_delegatesToPersistenceAndReturnsRun() {
-        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
+        when(ingestionService.createRunningRecord(eq(IngestionRunSource.IBGE_POP), anyString()))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenReturn(List.of(sampleDto));
         when(ingestionService.persistPopulacao(any(), eq(2024))).thenReturn(1);
@@ -56,7 +56,7 @@ class IbgePopulacaoIngestionServiceTest {
         IngestionRun result = ibgePopulacaoIngestionService.ingest("2024");
 
         assertThat(result).isEqualTo(runningRun);
-        verify(ingestionService).createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024");
+        verify(ingestionService).createRunningRecord(eq(IngestionRunSource.IBGE_POP), anyString());
         verify(ibgePopulacaoClient).fetchAll("2024");
         verify(ingestionService).persistPopulacao(List.of(sampleDto), 2024);
         verify(ingestionService).markAsSuccess(runningRun, 1, 1);
@@ -65,7 +65,7 @@ class IbgePopulacaoIngestionServiceTest {
 
     @Test
     void ingest_whenIbgeApiFails_marksRunAsFailedAndRethrows() {
-        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
+        when(ingestionService.createRunningRecord(eq(IngestionRunSource.IBGE_POP), anyString()))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenThrow(new IbgeApiException("API timeout"));
 
@@ -79,7 +79,7 @@ class IbgePopulacaoIngestionServiceTest {
 
     @Test
     void ingest_withEmptyRecords_callsPersistWithEmptyListAndSucceeds() {
-        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
+        when(ingestionService.createRunningRecord(eq(IngestionRunSource.IBGE_POP), anyString()))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenReturn(List.of());
         when(ingestionService.persistPopulacao(any(), eq(2024))).thenReturn(0);
@@ -91,7 +91,7 @@ class IbgePopulacaoIngestionServiceTest {
 
     @Test
     void ingest_whenUnexpectedExceptionOccurs_wrapsInIbgeApiException() {
-        when(ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, "2024"))
+        when(ingestionService.createRunningRecord(eq(IngestionRunSource.IBGE_POP), anyString()))
                 .thenReturn(runningRun);
         when(ibgePopulacaoClient.fetchAll("2024")).thenReturn(List.of(sampleDto));
         when(ingestionService.persistPopulacao(any(), anyInt()))

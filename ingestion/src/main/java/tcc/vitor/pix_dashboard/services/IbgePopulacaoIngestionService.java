@@ -30,7 +30,10 @@ public class IbgePopulacaoIngestionService {
                 .addKeyValue("ano", ano)
                 .log("Iniciando ingestao de populacao IBGE");
 
-        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_POP, ano);
+        IngestionRun run = ingestionService.createRunningRecord(
+                IngestionRunSource.IBGE_POP,
+                ano != null ? "{\"ano\":\"" + ano + "\"}" : "{}"
+        );
         long startTime = System.currentTimeMillis();
 
         try {

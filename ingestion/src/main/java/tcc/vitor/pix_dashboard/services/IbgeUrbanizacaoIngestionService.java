@@ -30,7 +30,10 @@ public class IbgeUrbanizacaoIngestionService {
                 .addKeyValue("ano", ano)
                 .log("Iniciando ingestao de taxa de urbanizacao");
 
-        IngestionRun run = ingestionService.createIbgeRunningRecord(IngestionRunSource.IBGE_URBANIZACAO, ano);
+        IngestionRun run = ingestionService.createRunningRecord(
+                IngestionRunSource.IBGE_URBANIZACAO,
+                ano != null ? "{\"ano\":\"" + ano + "\"}" : "{}"
+        );
         long startTime = System.currentTimeMillis();
 
         try {
