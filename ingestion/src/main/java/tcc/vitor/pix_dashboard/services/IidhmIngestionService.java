@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
+import tcc.vitor.pix_dashboard.services.abstracts.AbstractFileIngestionService;
 import tcc.vitor.pix_dashboard.services.dto.IidhmDTO;
 import tcc.vitor.pix_dashboard.services.persistence.IdhmPersistenceService;
 

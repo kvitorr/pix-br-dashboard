@@ -1,10 +1,11 @@
-package tcc.vitor.pix_dashboard.services;
+package tcc.vitor.pix_dashboard.services.abstracts;
 
 import org.slf4j.Logger;
 import org.springframework.web.multipart.MultipartFile;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.exceptions.IngestionException;
+import tcc.vitor.pix_dashboard.services.IngestionRunManager;
 
 import java.io.IOException;
 import java.util.List;

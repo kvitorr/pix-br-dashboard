@@ -7,6 +7,7 @@ import tcc.vitor.pix_dashboard.clients.IbgeUrbanizacaoClient;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.exceptions.IbgeApiException;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
+import tcc.vitor.pix_dashboard.services.abstracts.AbstractIngestionService;
 import tcc.vitor.pix_dashboard.services.dto.IbgeUrbanizacaoDTO;
 import tcc.vitor.pix_dashboard.services.persistence.UrbanizacaoPersistenceService;
 

@@ -7,6 +7,7 @@ import tcc.vitor.pix_dashboard.clients.BcbPixClient;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.exceptions.BcbApiException;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
+import tcc.vitor.pix_dashboard.services.abstracts.AbstractIngestionService;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
 import tcc.vitor.pix_dashboard.services.persistence.PixPersistenceService;
 
