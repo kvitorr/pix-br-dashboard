@@ -11,7 +11,9 @@ import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.enums.IngestionRunStatus;
 import tcc.vitor.pix_dashboard.exceptions.IbgeApiException;
+import tcc.vitor.pix_dashboard.exceptions.IngestionException;
 import tcc.vitor.pix_dashboard.services.dto.IbgePibDTO;
+import tcc.vitor.pix_dashboard.services.persistence.PibPersistenceService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -29,7 +31,10 @@ class IbgePibIngestionServiceTest {
     private IbgePibClient ibgePibClient;
 
     @Mock
-    private IngestionService ingestionService;
+    private IngestionRunManager runManager;
+
+    @Mock
+    private PibPersistenceService pibPersistenceService;
 
     @InjectMocks
     private IbgePibIngestionService ibgePibIngestionService;
@@ -49,24 +54,24 @@ class IbgePibIngestionServiceTest {
 
     @Test
     void ingest_happyPath_delegatesToPersistenceAndReturnsRun() {
-        when(ingestionService.createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString()))
+        when(runManager.createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString()))
                 .thenReturn(runningRun);
         when(ibgePibClient.fetchAll("2023")).thenReturn(List.of(sampleDto));
-        when(ingestionService.persistPib(any(), eq(2023))).thenReturn(1);
+        when(pibPersistenceService.persist(any(), eq(2023))).thenReturn(1);
 
         IngestionRun result = ibgePibIngestionService.ingest("2023");
 
         assertThat(result).isEqualTo(runningRun);
-        verify(ingestionService).createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString());
+        verify(runManager).createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString());
         verify(ibgePibClient).fetchAll("2023");
-        verify(ingestionService).persistPib(List.of(sampleDto), 2023);
-        verify(ingestionService).markAsSuccess(runningRun, 1, 1);
-        verify(ingestionService, never()).markAsFailed(any(), anyString(), anyString());
+        verify(pibPersistenceService).persist(List.of(sampleDto), 2023);
+        verify(runManager).markAsSuccess(runningRun, 1, 1);
+        verify(runManager, never()).markAsFailed(any(), anyString(), anyString());
     }
 
     @Test
     void ingest_whenIbgeApiFails_marksRunAsFailedAndRethrows() {
-        when(ingestionService.createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString()))
+        when(runManager.createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString()))
                 .thenReturn(runningRun);
         when(ibgePibClient.fetchAll("2023")).thenThrow(new IbgeApiException("SIDRA timeout"));
 
@@ -74,34 +79,34 @@ class IbgePibIngestionServiceTest {
                 .isInstanceOf(IbgeApiException.class)
                 .hasMessageContaining("SIDRA timeout");
 
-        verify(ingestionService).markAsFailed(runningRun, "IBGE_API_ERROR", "SIDRA timeout");
-        verify(ingestionService, never()).markAsSuccess(any(), anyInt(), anyInt());
+        verify(runManager).markAsFailed(runningRun, "IBGE_API_ERROR", "SIDRA timeout");
+        verify(runManager, never()).markAsSuccess(any(), anyInt(), anyInt());
     }
 
     @Test
     void ingest_withEmptyRecords_callsPersistWithEmptyListAndSucceeds() {
-        when(ingestionService.createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString()))
+        when(runManager.createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString()))
                 .thenReturn(runningRun);
         when(ibgePibClient.fetchAll("2023")).thenReturn(List.of());
-        when(ingestionService.persistPib(any(), eq(2023))).thenReturn(0);
+        when(pibPersistenceService.persist(any(), eq(2023))).thenReturn(0);
 
         ibgePibIngestionService.ingest("2023");
 
-        verify(ingestionService).markAsSuccess(runningRun, 0, 0);
+        verify(runManager).markAsSuccess(runningRun, 0, 0);
     }
 
     @Test
-    void ingest_whenUnexpectedExceptionOccurs_wrapsInIbgeApiException() {
-        when(ingestionService.createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString()))
+    void ingest_whenUnexpectedExceptionOccurs_wrapsInIngestionException() {
+        when(runManager.createRunningRecord(eq(IngestionRunSource.IBGE_PIB), anyString()))
                 .thenReturn(runningRun);
         when(ibgePibClient.fetchAll("2023")).thenReturn(List.of(sampleDto));
-        when(ingestionService.persistPib(any(), anyInt()))
+        when(pibPersistenceService.persist(any(), anyInt()))
                 .thenThrow(new RuntimeException("DB connection lost"));
 
         assertThatThrownBy(() -> ibgePibIngestionService.ingest("2023"))
-                .isInstanceOf(IbgeApiException.class)
-                .hasMessageContaining("Erro inesperado na ingestao de PIB");
+                .isInstanceOf(IngestionException.class)
+                .hasMessageContaining("Erro inesperado na ingestao de PIB IBGE/SIDRA");
 
-        verify(ingestionService).markAsFailed(runningRun, "UNEXPECTED_ERROR", "DB connection lost");
+        verify(runManager).markAsFailed(runningRun, "UNEXPECTED_ERROR", "DB connection lost");
     }
 }

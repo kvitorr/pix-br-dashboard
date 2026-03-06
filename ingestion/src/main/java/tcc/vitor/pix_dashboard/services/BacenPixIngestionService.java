@@ -4,80 +4,66 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tcc.vitor.pix_dashboard.clients.BcbPixClient;
-import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.exceptions.BcbApiException;
+import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
 
 import java.util.List;
 
 @Service
-public class BacenPixIngestionService {
+public class BacenPixIngestionService extends AbstractIngestionService<PixTransacaoMunicipioDTO> {
 
     private static final Logger log = LoggerFactory.getLogger(BacenPixIngestionService.class);
 
     private final BcbPixClient bcbPixClient;
-    private final IngestionService ingestionService;
     private final PixRecordPersister pixRecordPersister;
 
-    public BacenPixIngestionService(BcbPixClient bcbPixClient,
-                                    IngestionService ingestionService,
+    public BacenPixIngestionService(IngestionRunManager runManager,
+                                    BcbPixClient bcbPixClient,
                                     PixRecordPersister pixRecordPersister) {
+        super(runManager);
         this.bcbPixClient = bcbPixClient;
-        this.ingestionService = ingestionService;
         this.pixRecordPersister = pixRecordPersister;
     }
 
-    public IngestionRun ingest(String database) {
-        log.atInfo()
-                .addKeyValue("database", database)
-                .log("Iniciando ingestao para o periodo");
+    @Override
+    protected Logger log() {
+        return log;
+    }
 
-        IngestionRun run = ingestionService.createRunningRecord(
-                IngestionRunSource.BACEN_PIX,
-                "{\"database\":\"" + database + "\"}"
-        );
-        long startTime = System.currentTimeMillis();
+    @Override
+    protected IngestionRunSource source() {
+        return IngestionRunSource.BACEN_PIX;
+    }
 
-        try {
-            List<PixTransacaoMunicipioDTO> records = bcbPixClient.fetchAll(database);
+    @Override
+    protected String sourceName() {
+        return "PIX BACEN";
+    }
 
-            int upserted = pixRecordPersister.persistRecords(records, run.getId());
+    @Override
+    protected String buildParams(String param) {
+        return "{\"database\":\"" + param + "\"}";
+    }
 
-            long durationMs = System.currentTimeMillis() - startTime;
-            ingestionService.markAsSuccess(run, records.size(), upserted);
+    @Override
+    protected List<PixTransacaoMunicipioDTO> fetch(String param) {
+        return bcbPixClient.fetchAll(param);
+    }
 
-            log.atInfo()
-                    .addKeyValue("database", database)
-                    .addKeyValue("totalRecords", records.size())
-                    .addKeyValue("upserted", upserted)
-                    .addKeyValue("durationMs", durationMs)
-                    .log("Ingestao concluida com sucesso");
+    @Override
+    protected int persist(List<PixTransacaoMunicipioDTO> records, IngestionRun run, String param) {
+        return pixRecordPersister.persistRecords(records, run.getId());
+    }
 
-            return run;
+    @Override
+    protected boolean isKnownException(RuntimeException e) {
+        return e instanceof BcbApiException;
+    }
 
-        } catch (BcbApiException e) {
-            long durationMs = System.currentTimeMillis() - startTime;
-            ingestionService.markAsFailed(run, "BCB_API_ERROR", e.getMessage());
-
-            log.atError()
-                    .addKeyValue("database", database)
-                    .addKeyValue("error", e.getMessage())
-                    .addKeyValue("durationMs", durationMs)
-                    .log("Falha na ingestao");
-
-            throw e;
-        } catch (Exception e) {
-            long durationMs = System.currentTimeMillis() - startTime;
-            ingestionService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
-
-            log.atError()
-                    .addKeyValue("database", database)
-                    .addKeyValue("error", e.getMessage())
-                    .addKeyValue("durationMs", durationMs)
-                    .log("Erro inesperado na ingestao");
-
-            throw new BcbApiException("Erro inesperado na ingestao", e);
-        }
+    @Override
+    protected String knownErrorCode() {
+        return "BCB_API_ERROR";
     }
 }

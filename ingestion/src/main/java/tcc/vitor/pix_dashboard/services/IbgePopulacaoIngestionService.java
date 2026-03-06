@@ -4,77 +4,67 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tcc.vitor.pix_dashboard.clients.IbgePopulacaoClient;
-import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.exceptions.IbgeApiException;
+import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.services.dto.IbgePopulacaoDTO;
+import tcc.vitor.pix_dashboard.services.persistence.PopulacaoPersistenceService;
 
 import java.util.List;
 
 @Service
-public class IbgePopulacaoIngestionService {
+public class IbgePopulacaoIngestionService extends AbstractIngestionService<IbgePopulacaoDTO> {
 
     private static final Logger log = LoggerFactory.getLogger(IbgePopulacaoIngestionService.class);
 
     private final IbgePopulacaoClient ibgePopulacaoClient;
-    private final IngestionService ingestionService;
+    private final PopulacaoPersistenceService populacaoPersistenceService;
 
-    public IbgePopulacaoIngestionService(IbgePopulacaoClient ibgePopulacaoClient,
-                                         IngestionService ingestionService) {
+    public IbgePopulacaoIngestionService(IngestionRunManager runManager,
+                                         IbgePopulacaoClient ibgePopulacaoClient,
+                                         PopulacaoPersistenceService populacaoPersistenceService) {
+        super(runManager);
         this.ibgePopulacaoClient = ibgePopulacaoClient;
-        this.ingestionService = ingestionService;
+        this.populacaoPersistenceService = populacaoPersistenceService;
     }
 
-    public IngestionRun ingest(String ano) {
-        log.atInfo()
-                .addKeyValue("ano", ano)
-                .log("Iniciando ingestao de populacao IBGE");
+    @Override
+    protected Logger log() {
+        return log;
+    }
 
-        IngestionRun run = ingestionService.createRunningRecord(
-                IngestionRunSource.IBGE_POP,
-                ano != null ? "{\"ano\":\"" + ano + "\"}" : "{}"
-        );
-        long startTime = System.currentTimeMillis();
+    @Override
+    protected IngestionRunSource source() {
+        return IngestionRunSource.IBGE_POP;
+    }
 
-        try {
-            List<IbgePopulacaoDTO> records = ibgePopulacaoClient.fetchAll(ano);
+    @Override
+    protected String sourceName() {
+        return "populacao IBGE";
+    }
 
-            int upserted = ingestionService.persistPopulacao(records, Integer.parseInt(ano));
+    @Override
+    protected String buildParams(String param) {
+        return param != null ? "{\"ano\":\"" + param + "\"}" : "{}";
+    }
 
-            long durationMs = System.currentTimeMillis() - startTime;
-            ingestionService.markAsSuccess(run, records.size(), upserted);
+    @Override
+    protected List<IbgePopulacaoDTO> fetch(String param) {
+        return ibgePopulacaoClient.fetchAll(param);
+    }
 
-            log.atInfo()
-                    .addKeyValue("ano", ano)
-                    .addKeyValue("totalRecords", records.size())
-                    .addKeyValue("upserted", upserted)
-                    .addKeyValue("durationMs", durationMs)
-                    .log("Ingestao de populacao concluida com sucesso");
+    @Override
+    protected int persist(List<IbgePopulacaoDTO> records, IngestionRun run, String param) {
+        return populacaoPersistenceService.persist(records, Integer.parseInt(param));
+    }
 
-            return run;
+    @Override
+    protected boolean isKnownException(RuntimeException e) {
+        return e instanceof IbgeApiException;
+    }
 
-        } catch (IbgeApiException e) {
-            long durationMs = System.currentTimeMillis() - startTime;
-            ingestionService.markAsFailed(run, "IBGE_API_ERROR", e.getMessage());
-
-            log.atError()
-                    .addKeyValue("ano", ano)
-                    .addKeyValue("error", e.getMessage())
-                    .addKeyValue("durationMs", durationMs)
-                    .log("Falha na ingestao de populacao");
-
-            throw e;
-        } catch (Exception e) {
-            long durationMs = System.currentTimeMillis() - startTime;
-            ingestionService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
-
-            log.atError()
-                    .addKeyValue("ano", ano)
-                    .addKeyValue("error", e.getMessage())
-                    .addKeyValue("durationMs", durationMs)
-                    .log("Erro inesperado na ingestao de populacao");
-
-            throw new IbgeApiException("Erro inesperado na ingestao de populacao", e);
-        }
+    @Override
+    protected String knownErrorCode() {
+        return "IBGE_API_ERROR";
     }
 }
