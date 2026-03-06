@@ -6,8 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
-import tcc.vitor.pix_dashboard.exceptions.IbgeApiException;
+import tcc.vitor.pix_dashboard.exceptions.IngestionException;
 import tcc.vitor.pix_dashboard.services.dto.IidhmDTO;
+import tcc.vitor.pix_dashboard.services.persistence.IdhmPersistenceService;
 
 import java.util.List;
 
@@ -17,11 +18,15 @@ public class IidhmIngestionService {
     private static final Logger log = LoggerFactory.getLogger(IidhmIngestionService.class);
 
     private final IidhmCsvParser iidhmCsvParser;
-    private final IngestionService ingestionService;
+    private final IngestionRunManager runManager;
+    private final IdhmPersistenceService idhmPersistenceService;
 
-    public IidhmIngestionService(IidhmCsvParser iidhmCsvParser, IngestionService ingestionService) {
+    public IidhmIngestionService(IidhmCsvParser iidhmCsvParser,
+                                  IngestionRunManager runManager,
+                                  IdhmPersistenceService idhmPersistenceService) {
         this.iidhmCsvParser = iidhmCsvParser;
-        this.ingestionService = ingestionService;
+        this.runManager = runManager;
+        this.idhmPersistenceService = idhmPersistenceService;
     }
 
     public IngestionRun ingest(MultipartFile file, String ano) {
@@ -31,7 +36,7 @@ public class IidhmIngestionService {
                 .addKeyValue("ano", ano)
                 .log("Iniciando ingestao de IDHM a partir de CSV estadual");
 
-        IngestionRun run = ingestionService.createRunningRecord(
+        IngestionRun run = runManager.createRunningRecord(
                 IngestionRunSource.IDHM_ESTADUAL,
                 ano != null ? "{\"ano\":\"" + ano + "\"}" : "{}"
         );
@@ -39,11 +44,9 @@ public class IidhmIngestionService {
 
         try {
             List<IidhmDTO> records = iidhmCsvParser.parse(file.getInputStream());
-
-            int updated = ingestionService.persistIdhm(records, Integer.parseInt(ano));
-
+            int updated = idhmPersistenceService.persist(records, Integer.parseInt(ano));
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionService.markAsSuccess(run, records.size(), updated);
+            runManager.markAsSuccess(run, records.size(), updated);
 
             log.atInfo()
                     .addKeyValue("estadosParsed", records.size())
@@ -53,9 +56,9 @@ public class IidhmIngestionService {
 
             return run;
 
-        } catch (IbgeApiException e) {
+        } catch (RuntimeException e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionService.markAsFailed(run, "IDHM_ERROR", e.getMessage());
+            runManager.markAsFailed(run, "IDHM_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("error", e.getMessage())
@@ -65,14 +68,14 @@ public class IidhmIngestionService {
             throw e;
         } catch (Exception e) {
             long durationMs = System.currentTimeMillis() - startTime;
-            ingestionService.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
+            runManager.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
 
             log.atError()
                     .addKeyValue("error", e.getMessage())
                     .addKeyValue("durationMs", durationMs)
                     .log("Erro inesperado na ingestao de IDHM");
 
-            throw new IbgeApiException("Erro inesperado na ingestao de IDHM", e);
+            throw new IngestionException("Erro inesperado na ingestao de IDHM", e);
         }
     }
 }
