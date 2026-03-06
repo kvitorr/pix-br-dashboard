@@ -1,4 +1,4 @@
-package tcc.vitor.pix_dashboard.services;
+package tcc.vitor.pix_dashboard.services.persistence;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class PixRecordPersister {
+public class PixPersistenceService {
 
     @PersistenceContext
     private EntityManager entityManager;

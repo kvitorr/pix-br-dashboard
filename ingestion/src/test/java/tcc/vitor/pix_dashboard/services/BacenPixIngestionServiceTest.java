@@ -13,6 +13,7 @@ import tcc.vitor.pix_dashboard.enums.IngestionRunStatus;
 import tcc.vitor.pix_dashboard.exceptions.BcbApiException;
 import tcc.vitor.pix_dashboard.exceptions.IngestionException;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
+import tcc.vitor.pix_dashboard.services.persistence.PixPersistenceService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -33,7 +34,7 @@ class BacenPixIngestionServiceTest {
     private IngestionRunManager runManager;
 
     @Mock
-    private PixRecordPersister pixRecordPersister;
+    private PixPersistenceService pixPersistenceService;
 
     @InjectMocks
     private BacenPixIngestionService bacenPixIngestionService;
@@ -63,14 +64,14 @@ class BacenPixIngestionServiceTest {
         when(runManager.createRunningRecord(eq(IngestionRunSource.BACEN_PIX), anyString()))
                 .thenReturn(runningRun);
         when(bcbPixClient.fetchAll("202401")).thenReturn(List.of(sampleDto));
-        when(pixRecordPersister.persistRecords(any(), eq(runningRun.getId()))).thenReturn(1);
+        when(pixPersistenceService.persistRecords(any(), eq(runningRun.getId()))).thenReturn(1);
 
         IngestionRun result = bacenPixIngestionService.ingest("202401");
 
         assertThat(result).isEqualTo(runningRun);
         verify(runManager).createRunningRecord(eq(IngestionRunSource.BACEN_PIX), anyString());
         verify(bcbPixClient).fetchAll("202401");
-        verify(pixRecordPersister).persistRecords(List.of(sampleDto), runningRun.getId());
+        verify(pixPersistenceService).persistRecords(List.of(sampleDto), runningRun.getId());
         verify(runManager).markAsSuccess(runningRun, 1, 1);
         verify(runManager, never()).markAsFailed(any(), anyString(), anyString());
     }
@@ -94,7 +95,7 @@ class BacenPixIngestionServiceTest {
         when(runManager.createRunningRecord(eq(IngestionRunSource.BACEN_PIX), anyString()))
                 .thenReturn(runningRun);
         when(bcbPixClient.fetchAll("202401")).thenReturn(List.of());
-        when(pixRecordPersister.persistRecords(any(), eq(runningRun.getId()))).thenReturn(0);
+        when(pixPersistenceService.persistRecords(any(), eq(runningRun.getId()))).thenReturn(0);
 
         bacenPixIngestionService.ingest("202401");
 
@@ -106,7 +107,7 @@ class BacenPixIngestionServiceTest {
         when(runManager.createRunningRecord(eq(IngestionRunSource.BACEN_PIX), anyString()))
                 .thenReturn(runningRun);
         when(bcbPixClient.fetchAll("202401")).thenReturn(List.of(sampleDto));
-        when(pixRecordPersister.persistRecords(any(), any()))
+        when(pixPersistenceService.persistRecords(any(), any()))
                 .thenThrow(new RuntimeException("DB connection lost"));
 
         assertThatThrownBy(() -> bacenPixIngestionService.ingest("202401"))

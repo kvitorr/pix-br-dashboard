@@ -8,6 +8,7 @@ import tcc.vitor.pix_dashboard.enums.IngestionRunSource;
 import tcc.vitor.pix_dashboard.exceptions.BcbApiException;
 import tcc.vitor.pix_dashboard.database.models.IngestionRun;
 import tcc.vitor.pix_dashboard.services.dto.PixTransacaoMunicipioDTO;
+import tcc.vitor.pix_dashboard.services.persistence.PixPersistenceService;
 
 import java.util.List;
 
@@ -17,14 +18,14 @@ public class BacenPixIngestionService extends AbstractIngestionService<PixTransa
     private static final Logger log = LoggerFactory.getLogger(BacenPixIngestionService.class);
 
     private final BcbPixClient bcbPixClient;
-    private final PixRecordPersister pixRecordPersister;
+    private final PixPersistenceService pixPersistenceService;
 
     public BacenPixIngestionService(IngestionRunManager runManager,
                                     BcbPixClient bcbPixClient,
-                                    PixRecordPersister pixRecordPersister) {
+                                    PixPersistenceService pixPersistenceService) {
         super(runManager);
         this.bcbPixClient = bcbPixClient;
-        this.pixRecordPersister = pixRecordPersister;
+        this.pixPersistenceService = pixPersistenceService;
     }
 
     @Override
@@ -54,7 +55,7 @@ public class BacenPixIngestionService extends AbstractIngestionService<PixTransa
 
     @Override
     protected int persist(List<PixTransacaoMunicipioDTO> records, IngestionRun run, String param) {
-        return pixRecordPersister.persistRecords(records, run.getId());
+        return pixPersistenceService.persistRecords(records, run.getId());
     }
 
     @Override
