@@ -8,7 +8,7 @@ import { KpiCard } from '../components/KpiCard';
 import { FilterBar } from '../components/FilterBar';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
-import { MapaCoroplético } from '../components/MapaCoroplético';
+import { MapaCoropletico } from '../components/MapaCoropletico';
 import { REGION_COLORS } from '../constants/colors';
 
 export function VisaoGeral() {
@@ -70,7 +70,7 @@ export function VisaoGeral() {
         <div className="flex-1">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <h2 className="text-base font-semibold text-gray-700 mb-3">Penetração por Município</h2>
-            <MapaCoroplético municipios={data.mapaMunicipios} />
+            <MapaCoropletico municipios={data.mapaMunicipios} />
           </div>
         </div>
         <div className="lg:w-80">

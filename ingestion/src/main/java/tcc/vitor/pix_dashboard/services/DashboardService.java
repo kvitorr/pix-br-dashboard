@@ -170,6 +170,6 @@ public class DashboardService {
     }
 
     private String emptyToNull(String s) {
-        return (s == null || s.isBlank()) ? null : s;
+        return (s == null || s.isBlank()) ? null : s.toUpperCase();
     }
 }

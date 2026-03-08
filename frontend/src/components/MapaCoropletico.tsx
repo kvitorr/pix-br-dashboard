@@ -11,7 +11,7 @@ interface MapaCoropléticoProps {
   municipios: MapaMunicipio[];
 }
 
-export function MapaCoroplético({ municipios }: MapaCoropléticoProps) {
+export function MapaCoropletico({ municipios }: MapaCoropléticoProps) {
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<GeoJSONLayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,7 +72,7 @@ export function MapaCoroplético({ municipios }: MapaCoropléticoProps) {
       applyLayer(geojsonCache);
     } else {
       fetch(
-        'https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=application/json&resolucao=5&qualidade=8'
+        'https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=application/json&resolucao=5&qualidade=intermediaria'
       )
         .then((r) => r.json() as Promise<GeoJSON.FeatureCollection>)
         .then((geojson) => {
