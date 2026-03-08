@@ -16,8 +16,7 @@ export function MunicipioSearch({ municipios, selected, onSelect, loading = fals
   const filtered = query.length >= 2
     ? municipios
         .filter(m =>
-          m.municipioNome.toLowerCase().includes(query.toLowerCase()) ||
-          m.estado.toLowerCase().includes(query.toLowerCase())
+          m.municipioNome.toLowerCase().includes(query.toLowerCase())
         )
         .slice(0, 50)
     : [];

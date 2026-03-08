@@ -14,7 +14,6 @@ import { REGION_COLORS } from '../constants/colors';
 import type { MunicipioRanking } from '../types/dashboard';
 
 function RankingTable({ title, items }: { title: string; items: MunicipioRanking[] }) {
-  const max = Math.max(...items.map((m) => m.penetracaoPf ?? 0));
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex-1">
       <h2 className="text-base font-semibold text-gray-700 mb-3">{title}</h2>
@@ -40,7 +39,7 @@ function RankingTable({ title, items }: { title: string; items: MunicipioRanking
                 >
                   <div
                     className="h-1 rounded-full bg-blue-500"
-                    style={{ width: `${((m.penetracaoPf ?? 0) / max) * 100}%` }}
+                    style={{ width: `${Math.min(100, m.penetracaoPf ?? 0)}%` }}
                   />
                 </div>
               </td>
