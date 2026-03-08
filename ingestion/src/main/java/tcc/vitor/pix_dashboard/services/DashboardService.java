@@ -2,14 +2,17 @@ package tcc.vitor.pix_dashboard.services;
 
 import org.springframework.stereotype.Service;
 import tcc.vitor.pix_dashboard.database.repositories.DashboardQueryRepository;
+import tcc.vitor.pix_dashboard.database.repositories.projections.SerieTemporalRegionalProjection;
 import tcc.vitor.pix_dashboard.services.dto.dashboard.*;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class DashboardService {
+
+    private static final DateTimeFormatter ANO_MES_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
     private final DashboardQueryRepository repository;
 
@@ -67,7 +70,8 @@ public class DashboardService {
         LocalDate inicio = parseMesOpcional(dataInicio);
         LocalDate fim = parseMesOpcional(dataFim);
 
-        List<Object[]> rows = repository.findSerieTemporalRegional(regiaoParam, inicio, fim);
+        List<SerieTemporalRegionalProjection> rows =
+                repository.findSerieTemporalRegional(regiaoParam, inicio, fim);
 
         // Agrupar por ano_mes → { anoMes: string, porRegiao: [{regiao, penetracaoMedia}] }
         LinkedHashMap<String, List<RegiaoPenetracaoDTO>> porMes = new LinkedHashMap<>();
@@ -75,11 +79,11 @@ public class DashboardService {
         Map<String, Double> ultimoMesPorRegiao = new LinkedHashMap<>();
         Map<String, Double> ticketNacionalPorMes = new LinkedHashMap<>();
 
-        for (Object[] row : rows) {
-            String mes = (String) row[0];
-            String reg = (String) row[1];
-            Double penetracao = toDouble(row[2]);
-            Double ticket = toDouble(row[3]);
+        for (SerieTemporalRegionalProjection row : rows) {
+            String mes = ANO_MES_FORMATTER.format(row.getAnoMes());
+            String reg = row.getRegiao();
+            Double penetracao = row.getPenetracaoMedia();
+            Double ticket = row.getTicketMedio();
 
             porMes.computeIfAbsent(mes, k -> new ArrayList<>())
                     .add(new RegiaoPenetracaoDTO(reg, penetracao));
@@ -167,10 +171,5 @@ public class DashboardService {
 
     private String emptyToNull(String s) {
         return (s == null || s.isBlank()) ? null : s;
-    }
-
-    private Double toDouble(Object o) {
-        if (o == null) return null;
-        return ((Number) o).doubleValue();
     }
 }
