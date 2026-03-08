@@ -142,13 +142,12 @@ public interface VwIndicadoresMunicipioRepository
                    v.municipio        AS municipio,
                    v.estado           AS estado,
                    v.regiao           AS regiao,
-                   v.siglaRegiao      AS siglaRegiao,
-                   v.penetracaoPf     AS penetracaoPf
+                   v.siglaRegiao      AS siglaRegiao
             FROM VwIndicadoresMunicipio v
             GROUP BY v.id.municipioIbge, v.municipio, v.estado, v.regiao, v.siglaRegiao
             ORDER BY v.municipio
             """)
-    List<MunicipioRankingProjection> findAllMunicipios();
+    List<MunicipioListProjection> findAllMunicipios();
 
     @Query("""
             SELECT v.id.municipioIbge AS municipioIbge,
