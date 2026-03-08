@@ -14,13 +14,13 @@ public class VwEvolucaoRegional {
     @Column(name = "sigla_regiao")
     private String siglaRegiao;
 
-    @Column(name = "penetracao_media")
+    @Column(name = "penetracao_media", columnDefinition = "numeric")
     private Double penetracaoMedia;
 
-    @Column(name = "ticket_medio")
+    @Column(name = "ticket_medio", columnDefinition = "numeric")
     private Double ticketMedio;
 
-    @Column(name = "valor_per_capita")
+    @Column(name = "valor_per_capita", columnDefinition = "numeric")
     private Double valorPerCapita;
 
     @Column(name = "populacao_total")
