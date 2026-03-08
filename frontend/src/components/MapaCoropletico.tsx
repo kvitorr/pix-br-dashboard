@@ -22,10 +22,9 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
   const containerRef = useRef<HTMLDivElement>(null);
   
   const [isLoading, setIsLoading] = useState(!geojsonCache);
-  
-  // NOVIDADE: Estado para guardar os itens da legenda
   const [legendItems, setLegendItems] = useState<{color: string, label: string}[]>([]);
 
+  // 1. INICIALIZA O MAPA
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -35,6 +34,16 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
         zoomSnap: 0.1, 
         wheelPxPerZoomLevel: 120
       }).setView([-15.78, -47.93], 4.5);
+
+      // --- O PULO DO GATO SÊNIOR: CRIAR UM PANE PARA AS BORDAS DOS ESTADOS ---
+      // O Leaflet desenha as camadas no zIndex 400. Vamos colocar os Estados no 410.
+      map.createPane('ufBorders');
+      const ufPane = map.getPane('ufBorders');
+      if (ufPane) {
+        ufPane.style.zIndex = '410'; 
+        ufPane.style.pointerEvents = 'none'; // CRUCIAL: O mouse atravessa essa camada!
+      }
+      // -----------------------------------------------------------------------
 
       mapRef.current = map;
     } catch (err) {
@@ -49,6 +58,7 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
     };
   }, []);
 
+  // 2. BUSCA E RENDERIZA OS DADOS
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !municipios) return;
@@ -69,12 +79,10 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
         const thresholds = [1, 2, 3, 4].map(q => values[Math.floor((q * values.length) / 5)] ?? 0);
         const dadosMap = new Map(municipios.map(m => [String(m.municipioIbge), m]));
 
-        // --- NOVIDADE: Monta as informações da Legenda dinamicamente ---
         if (values.length > 0) {
           const minVal = values[0] ?? 0;
           const maxVal = values[values.length - 1] ?? 0;
 
-          // Cria os textos dos intervalos baseados nos quintis
           setLegendItems([
             { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: `${minVal.toFixed(1)}% a ${thresholds[0].toFixed(1)}%` },
             { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: `${thresholds[0].toFixed(1)}% a ${thresholds[1].toFixed(1)}%` },
@@ -83,7 +91,6 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
             { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: `> ${thresholds[3].toFixed(1)}%` },
           ]);
         }
-        // ---------------------------------------------------------------
 
         const featuresFiltradas = geojson.features.filter(feat => {
           const cod = feat?.properties?.codarea || feat?.properties?.CD_MUN;
@@ -112,7 +119,43 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
             const nome = municipioData?.municipioNome || 'Sem Dados'; 
             const val = municipioData?.penetracaoPf;
 
-            layer.bindTooltip(`<b>${nome}</b><br/>${val != null ? val.toFixed(1) + '%' : '0.0%'}`);
+            layer.bindTooltip(`<b>${nome}</b><br/>${val != null ? val.toFixed(1) + '%' : '0.0%'}`, {
+              sticky: true,
+              direction: 'auto',
+              className: 'shadow-sm'
+            });
+
+            // LÓGICA DE INTERATIVIDADE CORRIGIDA
+            layer.on({
+              mouseover: (e) => {
+                const target = e.target;
+                
+                target.setStyle({
+                  weight: 2,
+                  color: '#1e293b', 
+                  fillOpacity: 1
+                });
+                
+                // Agora é 100% seguro trazer o município para frente, 
+                // pois as bordas dos Estados estão presas no Pane superior invisível!
+                target.bringToFront(); 
+              },
+              mouseout: (e) => {
+                if (layerRef.current) {
+                  layerRef.current.resetStyle(e.target);
+                }
+              },
+              click: (e) => {
+                const currentMap = mapRef.current;
+                if (currentMap) {
+                  currentMap.fitBounds(e.target.getBounds(), {
+                    padding: [50, 50],
+                    maxZoom: 9, 
+                    animate: true
+                  });
+                }
+              }
+            });
           }
         }).addTo(map);
 
@@ -141,11 +184,12 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
           };
 
           ufLayerRef.current = L.geoJSON(ufsFiltradas, {
+            pane: 'ufBorders', // AQUI VINCULAMOS A CAMADA AO PANE QUE CRIAMOS!
             style: {
               fill: false,
               color: '#4755694d',
               weight: 1.5,
-              interactive: false
+              interactive: false // Reforça que o mouse não deve encostar aqui
             }
           }).addTo(map);
         };
@@ -211,7 +255,7 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
       {/* Container do Mapa */}
       <div ref={containerRef} className="absolute inset-0 z-0" />
 
-      {/* NOVIDADE: Legenda (Aparece no canto inferior direito se houver dados e não estiver carregando) */}
+      {/* Legenda */}
       {!isLoading && legendItems.length > 0 && (
         <div className="absolute bottom-4 right-4 z-20 bg-white/90 backdrop-blur-sm p-3.5 rounded-lg shadow-md border border-slate-200 text-xs text-slate-700 pointer-events-none">
           <h4 className="font-bold text-slate-800 mb-2.5 uppercase tracking-wide text-[10px]">Penetração</h4>
