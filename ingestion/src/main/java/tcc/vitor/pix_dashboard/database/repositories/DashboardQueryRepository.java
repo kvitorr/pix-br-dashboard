@@ -1,20 +1,25 @@
 package tcc.vitor.pix_dashboard.database.repositories;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
+import tcc.vitor.pix_dashboard.database.repositories.projections.*;
 import tcc.vitor.pix_dashboard.services.dto.dashboard.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 public class DashboardQueryRepository {
 
-    private final EntityManager em;
+    private final VwIndicadoresMunicipioRepository indicadoresRepo;
+    private final VwEvolucaoRegionalRepository evolucaoRepo;
 
-    public DashboardQueryRepository(EntityManager em) {
-        this.em = em;
+    public DashboardQueryRepository(VwIndicadoresMunicipioRepository indicadoresRepo,
+                                    VwEvolucaoRegionalRepository evolucaoRepo) {
+        this.indicadoresRepo = indicadoresRepo;
+        this.evolucaoRepo = evolucaoRepo;
     }
 
     // =========================================================================
@@ -22,11 +27,8 @@ public class DashboardQueryRepository {
     // =========================================================================
 
     public LocalDate findLatestAnoMes() {
-        Object result = em.createNativeQuery(
-                "SELECT MAX(ano_mes) FROM vw_indicadores_municipio"
-        ).getSingleResult();
-        if (result instanceof java.sql.Date d) return d.toLocalDate();
-        return LocalDate.now().withDayOfMonth(1);
+        LocalDate result = indicadoresRepo.findMaxAnoMes();
+        return result != null ? result : LocalDate.now().withDayOfMonth(1);
     }
 
     // =========================================================================
@@ -34,131 +36,74 @@ public class DashboardQueryRepository {
     // =========================================================================
 
     public KpisVisaoGeralDTO findKpisVisaoGeral(LocalDate anoMes, String regiao) {
-        Object[] row = (Object[]) em.createNativeQuery("""
-                SELECT
-                    ROUND(AVG(penetracao_pf)::numeric, 2),
-                    ROUND(AVG(ticket_medio_pf)::numeric, 2),
-                    ROUND(AVG(razao_pj_pf)::numeric, 4),
-                    ROUND(AVG(vl_per_capita_pf)::numeric, 2)
-                FROM vw_indicadores_municipio
-                WHERE ano_mes = :anoMes
-                  AND (:regiao IS NULL OR regiao = :regiao)
-                """)
-                .setParameter("anoMes", anoMes)
-                .setParameter("regiao", regiao)
-                .getSingleResult();
+        KpisVisaoGeralProjection p = indicadoresRepo.findKpisVisaoGeral(anoMes, regiao);
         return new KpisVisaoGeralDTO(
-                toDouble(row[0]), toDouble(row[1]), toDouble(row[2]), toDouble(row[3])
+                round2(p.getPenetracaoMedia()),
+                round2(p.getTicketMedio()),
+                round4(p.getRazaoPjPf()),
+                round2(p.getVlPerCapita())
         );
     }
 
-    @SuppressWarnings("unchecked")
     public List<MapaMunicipioDTO> findMapaMunicipios(LocalDate anoMes, String regiao) {
-        List<Object[]> rows = em.createNativeQuery("""
-                SELECT municipio_ibge, penetracao_pf
-                FROM vw_indicadores_municipio
-                WHERE ano_mes = :anoMes
-                  AND (:regiao IS NULL OR regiao = :regiao)
-                """)
-                .setParameter("anoMes", anoMes)
-                .setParameter("regiao", regiao)
-                .getResultList();
-        return rows.stream()
-                .map(r -> new MapaMunicipioDTO((String) r[0], toDouble(r[1])))
+        return indicadoresRepo.findMapaMunicipios(anoMes, regiao).stream()
+                .map(p -> new MapaMunicipioDTO(p.getMunicipioIbge(), p.getPenetracaoPf()))
                 .toList();
     }
 
-    @SuppressWarnings("unchecked")
     public List<PenetracaoRegiaoDTO> findPenetracaoPorRegiao(LocalDate anoMes, String regiao) {
-        List<Object[]> rows = em.createNativeQuery("""
-                SELECT regiao, sigla_regiao, ROUND(AVG(penetracao_pf)::numeric, 2)
-                FROM vw_indicadores_municipio
-                WHERE ano_mes = :anoMes
-                  AND (:regiao IS NULL OR regiao = :regiao)
-                GROUP BY regiao, sigla_regiao
-                ORDER BY regiao
-                """)
-                .setParameter("anoMes", anoMes)
-                .setParameter("regiao", regiao)
-                .getResultList();
-        return rows.stream()
-                .map(r -> new PenetracaoRegiaoDTO((String) r[0], (String) r[1], toDouble(r[2])))
+        return indicadoresRepo.findPenetracaoPorRegiao(anoMes, regiao).stream()
+                .map(p -> new PenetracaoRegiaoDTO(p.getRegiao(), p.getSiglaRegiao(), round2(p.getPenetracaoMedia())))
                 .toList();
     }
 
     public DonutCoberturaNacionalDTO findCoberturaNacional(LocalDate anoMes, String regiao) {
-        Object[] row = (Object[]) em.createNativeQuery("""
-                SELECT
-                    COUNT(*) FILTER (WHERE penetracao_pf > 50),
-                    COUNT(*) FILTER (WHERE penetracao_pf <= 50)
-                FROM vw_indicadores_municipio
-                WHERE ano_mes = :anoMes
-                  AND (:regiao IS NULL OR regiao = :regiao)
-                """)
-                .setParameter("anoMes", anoMes)
-                .setParameter("regiao", regiao)
-                .getSingleResult();
-        return new DonutCoberturaNacionalDTO(toLong(row[0]), toLong(row[1]));
+        CoberturaNacionalProjection p = indicadoresRepo.findCoberturaNacional(anoMes, regiao);
+        return new DonutCoberturaNacionalDTO(
+                p.getAcima50() != null ? p.getAcima50() : 0L,
+                p.getAbaixo50() != null ? p.getAbaixo50() : 0L
+        );
     }
 
     // =========================================================================
     // Disparidade Regional
     // =========================================================================
 
-    @SuppressWarnings("unchecked")
     public List<IqrRegiaoDTO> findIqrPorRegiao(LocalDate anoMes, String regiao) {
-        List<Object[]> rows = em.createNativeQuery("""
-                SELECT
-                    regiao,
-                    ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY penetracao_pf)::numeric, 2) AS q1,
-                    ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY penetracao_pf)::numeric, 2) AS mediana,
-                    ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY penetracao_pf)::numeric, 2) AS q3,
-                    ROUND(STDDEV(penetracao_pf)::numeric, 2) AS stddev
-                FROM vw_indicadores_municipio
-                WHERE ano_mes = :anoMes
-                  AND (:regiao IS NULL OR regiao = :regiao)
-                  AND penetracao_pf IS NOT NULL
-                GROUP BY regiao
-                ORDER BY regiao
-                """)
-                .setParameter("anoMes", anoMes)
-                .setParameter("regiao", regiao)
-                .getResultList();
-        return rows.stream()
-                .map(r -> new IqrRegiaoDTO((String) r[0], toDouble(r[1]), toDouble(r[2]), toDouble(r[3]), toDouble(r[4])))
+        List<PenetracaoBrutaProjection> bruta = indicadoresRepo.findPenetracaoBruta(anoMes, regiao);
+
+        Map<String, List<Double>> porRegiao = bruta.stream()
+                .collect(Collectors.groupingBy(
+                        PenetracaoBrutaProjection::getRegiao,
+                        Collectors.mapping(PenetracaoBrutaProjection::getPenetracaoPf, Collectors.toList())
+                ));
+
+        return porRegiao.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> {
+                    List<Double> vals = e.getValue();
+                    return new IqrRegiaoDTO(
+                            e.getKey(),
+                            round2(percentileCont(vals, 0.25)),
+                            round2(percentileCont(vals, 0.50)),
+                            round2(percentileCont(vals, 0.75)),
+                            round2(stddev(vals))
+                    );
+                })
                 .toList();
     }
 
-    @SuppressWarnings("unchecked")
     public List<MunicipioRankingDTO> findTop10(LocalDate anoMes, String regiao) {
-        return rankingQuery(anoMes, regiao, "DESC");
+        return indicadoresRepo.findTopMunicipios(anoMes, regiao, PageRequest.of(0, 10))
+                .stream()
+                .map(this::toRankingDTO)
+                .toList();
     }
 
-    @SuppressWarnings("unchecked")
     public List<MunicipioRankingDTO> findBottom10(LocalDate anoMes, String regiao) {
-        return rankingQuery(anoMes, regiao, "ASC");
-    }
-
-    private List<MunicipioRankingDTO> rankingQuery(LocalDate anoMes, String regiao, String order) {
-        String sql = """
-                SELECT municipio_ibge, municipio, estado, regiao, sigla_regiao, penetracao_pf
-                FROM vw_indicadores_municipio
-                WHERE ano_mes = :anoMes
-                  AND (:regiao IS NULL OR regiao = :regiao)
-                  AND penetracao_pf IS NOT NULL
-                ORDER BY penetracao_pf %s NULLS LAST
-                LIMIT 10
-                """.formatted(order);
-        @SuppressWarnings("unchecked")
-        List<Object[]> rows = em.createNativeQuery(sql)
-                .setParameter("anoMes", anoMes)
-                .setParameter("regiao", regiao)
-                .getResultList();
-        return rows.stream()
-                .map(r -> new MunicipioRankingDTO(
-                        (String) r[0], (String) r[1], (String) r[2],
-                        (String) r[3], (String) r[4], toDouble(r[5])
-                ))
+        return indicadoresRepo.findBottomMunicipios(anoMes, regiao, PageRequest.of(0, 10))
+                .stream()
+                .map(this::toRankingDTO)
                 .toList();
     }
 
@@ -166,25 +111,11 @@ public class DashboardQueryRepository {
     // Fatores Socioeconômicos
     // =========================================================================
 
-    @SuppressWarnings("unchecked")
     public List<ScatterMunicipioDTO> findScatterData(LocalDate anoMes, String regiao) {
-        List<Object[]> rows = em.createNativeQuery("""
-                SELECT municipio_ibge, municipio, regiao, pib_per_capita, idhm, taxa_urbanizacao, penetracao_pf
-                FROM vw_indicadores_municipio
-                WHERE ano_mes = :anoMes
-                  AND (:regiao IS NULL OR regiao = :regiao)
-                  AND pib_per_capita IS NOT NULL
-                  AND idhm IS NOT NULL
-                  AND taxa_urbanizacao IS NOT NULL
-                  AND penetracao_pf IS NOT NULL
-                """)
-                .setParameter("anoMes", anoMes)
-                .setParameter("regiao", regiao)
-                .getResultList();
-        return rows.stream()
-                .map(r -> new ScatterMunicipioDTO(
-                        (String) r[0], (String) r[1], (String) r[2],
-                        toDouble(r[3]), toDouble(r[4]), toDouble(r[5]), toDouble(r[6])
+        return indicadoresRepo.findScatterData(anoMes, regiao).stream()
+                .map(p -> new ScatterMunicipioDTO(
+                        p.getMunicipioIbge(), p.getMunicipio(), p.getRegiao(),
+                        p.getPibPerCapita(), p.getIdhm(), p.getTaxaUrbanizacao(), p.getPenetracaoPf()
                 ))
                 .toList();
     }
@@ -193,33 +124,44 @@ public class DashboardQueryRepository {
     // Evolução Temporal
     // =========================================================================
 
-    @SuppressWarnings("unchecked")
-    public List<Object[]> findSerieTemporalRegional(String regiao, LocalDate dataInicio, LocalDate dataFim) {
-        Query query = em.createNativeQuery("""
-                SELECT TO_CHAR(ano_mes, 'YYYY-MM') AS ano_mes_str, regiao, penetracao_media, ticket_medio
-                FROM vw_evolucao_regional
-                WHERE (:dataInicio IS NULL OR ano_mes >= :dataInicio)
-                  AND (:dataFim IS NULL OR ano_mes <= :dataFim)
-                  AND (:regiao IS NULL OR regiao = :regiao)
-                ORDER BY ano_mes, regiao
-                """);
-        query.setParameter("dataInicio", dataInicio);
-        query.setParameter("dataFim", dataFim);
-        query.setParameter("regiao", regiao);
-        return query.getResultList();
+    public List<SerieTemporalRegionalProjection> findSerieTemporalRegional(
+            String regiao, LocalDate dataInicio, LocalDate dataFim) {
+        return evolucaoRepo.findSerieTemporalRegional(regiao, dataInicio, dataFim);
     }
 
     // =========================================================================
-    // Helpers de conversão
+    // Helpers privados
     // =========================================================================
 
-    private Double toDouble(Object o) {
-        if (o == null) return null;
-        return ((Number) o).doubleValue();
+    private MunicipioRankingDTO toRankingDTO(MunicipioRankingProjection p) {
+        return new MunicipioRankingDTO(
+                p.getMunicipioIbge(), p.getMunicipio(), p.getEstado(),
+                p.getRegiao(), p.getSiglaRegiao(), p.getPenetracaoPf()
+        );
     }
 
-    private long toLong(Object o) {
-        if (o == null) return 0L;
-        return ((Number) o).longValue();
+    private double percentileCont(List<Double> sorted, double p) {
+        int n = sorted.size();
+        if (n == 0) return 0.0;
+        double idx = p * (n - 1);
+        int lo = (int) idx;
+        int hi = lo + 1;
+        double frac = idx - lo;
+        return hi >= n ? sorted.get(lo) : sorted.get(lo) + frac * (sorted.get(hi) - sorted.get(lo));
+    }
+
+    private double stddev(List<Double> values) {
+        if (values.isEmpty()) return 0.0;
+        double mean = values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        double variance = values.stream().mapToDouble(v -> Math.pow(v - mean, 2)).average().orElse(0.0);
+        return Math.sqrt(variance);
+    }
+
+    private Double round2(Double v) {
+        return v == null ? null : Math.round(v * 100.0) / 100.0;
+    }
+
+    private Double round4(Double v) {
+        return v == null ? null : Math.round(v * 10000.0) / 10000.0;
     }
 }
