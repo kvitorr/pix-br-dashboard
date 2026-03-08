@@ -124,7 +124,7 @@ export function EvolucaoTemporal() {
               angle={-30}
               textAnchor="end"
             />
-            <YAxis unit="%" tick={{ fontSize: 10 }} domain={[0, 'auto']} />
+            <YAxis unit="%" tick={{ fontSize: 10 }} domain={['auto', 'auto']} />
             <Tooltip formatter={(v) => [`${Number(v).toFixed(1)}%`]} />
             <Legend />
             {regioes.map((r) => (
