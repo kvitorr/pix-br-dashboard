@@ -47,7 +47,7 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
       // -----------------------------------------------------------------------
 
       map.on('dragstart', () => { isDraggingRef.current = true; });
-      map.on('dragend',   () => { isDraggingRef.current = false; });
+      map.on('dragend',   () => { setTimeout(() => { isDraggingRef.current = false; }, 50); });
 
       mapRef.current = map;
     } catch (err) {
