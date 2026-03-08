@@ -23,25 +23,25 @@ public class VwIndicadoresMunicipio {
     @Column(name = "sigla_regiao")
     private String siglaRegiao;
 
-    @Column(name = "penetracao_pf")
+    @Column(name = "penetracao_pf", columnDefinition = "numeric")
     private Double penetracaoPf;
 
-    @Column(name = "ticket_medio_pf")
+    @Column(name = "ticket_medio_pf", columnDefinition = "numeric")
     private Double ticketMedioPf;
 
-    @Column(name = "razao_pj_pf")
+    @Column(name = "razao_pj_pf", columnDefinition = "numeric")
     private Double razaoPjPf;
 
-    @Column(name = "vl_per_capita_pf")
+    @Column(name = "vl_per_capita_pf", columnDefinition = "numeric")
     private Double vlPerCapitaPf;
 
-    @Column(name = "pib_per_capita")
+    @Column(name = "pib_per_capita", columnDefinition = "numeric")
     private Double pibPerCapita;
 
-    @Column(name = "idhm")
+    @Column(name = "idhm", columnDefinition = "numeric")
     private Double idhm;
 
-    @Column(name = "taxa_urbanizacao")
+    @Column(name = "taxa_urbanizacao", columnDefinition = "numeric")
     private Double taxaUrbanizacao;
 
     public VwIndicadoresMunicipioId getId() { return id; }
