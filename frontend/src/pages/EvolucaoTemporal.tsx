@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, Legend,
-  ResponsiveContainer, BarChart, Bar, Cell, CartesianGrid,
+  LineChart, Line, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, BarChart, Bar, Cell, CartesianGrid, ReferenceArea,
 } from 'recharts';
 import { useEvolucaoTemporal } from '../hooks/useEvolucaoTemporal';
 import { FilterBar } from '../components/FilterBar';
@@ -69,6 +69,30 @@ export function EvolucaoTemporal() {
 
   const regioes = REGIONS.filter((r) => !regiao || r === regiao);
 
+  const currentMonth = toYearMonth(new Date());
+  const hasPartialMonth =
+    chartData.length > 0 &&
+    chartData[chartData.length - 1].anoMes === currentMonth;
+
+  const makeLabel =
+    (name: string) =>
+    (props: { x?: number; y?: number; index?: number }) => {
+      if (props.index !== chartData.length - 1) return null;
+      return (
+        <g>
+          <text
+            x={(props.x ?? 0) + 6}
+            y={(props.y ?? 0) + 4}
+            fill={REGION_COLORS[name]}
+            fontSize={10}
+            fontWeight={500}
+          >
+            {name}
+          </text>
+        </g>
+      );
+    };
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-4">Evolução Temporal</h1>
@@ -115,7 +139,7 @@ export function EvolucaoTemporal() {
           Penetração Média Mensal por Região
         </h2>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 20, left: 0 }}>
+          <LineChart data={chartData} margin={{ top: 5, right: 90, bottom: 20, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis
               dataKey="anoMes"
@@ -124,9 +148,34 @@ export function EvolucaoTemporal() {
               angle={-30}
               textAnchor="end"
             />
-            <YAxis unit="%" tick={{ fontSize: 10 }} domain={['auto', 'auto']} />
-            <Tooltip formatter={(v) => [`${Number(v).toFixed(1)}%`]} />
-            <Legend />
+            <YAxis
+              unit="%"
+              tick={{ fontSize: 10 }}
+              domain={[
+                (dataMin: number) => Math.floor(dataMin) - 1,
+                (dataMax: number) => Math.ceil(dataMax) + 1,
+              ]}
+            />
+            <Tooltip
+              labelFormatter={(label) => {
+                const suffix =
+                  hasPartialMonth && label === currentMonth
+                    ? ' (dados parciais)'
+                    : '';
+                return `${label}${suffix}`;
+              }}
+              formatter={(v) => [`${Number(v).toFixed(1)}%`]}
+            />
+            {hasPartialMonth && chartData.length >= 2 && (
+              <ReferenceArea
+                x1={String(chartData[chartData.length - 2].anoMes)}
+                x2={String(chartData[chartData.length - 1].anoMes)}
+                fill="#F9FAFB"
+                stroke="#E5E7EB"
+                strokeOpacity={0.5}
+                label={{ value: 'mês atual', position: 'insideTopLeft', fontSize: 9, fill: '#9CA3AF' }}
+              />
+            )}
             {regioes.map((r) => (
               <Line
                 key={r}
@@ -135,6 +184,7 @@ export function EvolucaoTemporal() {
                 stroke={REGION_COLORS[r]}
                 dot={false}
                 strokeWidth={2}
+                label={makeLabel(r)}
               />
             ))}
           </LineChart>
