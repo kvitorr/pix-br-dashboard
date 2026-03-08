@@ -36,47 +36,53 @@ export function VisaoGeral() {
         onAnoMesChange={setAnoMes}
       />
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard
-          title="Penetração Média PF"
-          value={data.kpis.penetracaoMediaNacional?.toFixed(1) ?? '—'}
-          unit="%"
-          subtitle="Usuários Pix / População"
-        />
-        <KpiCard
-          title="Ticket Médio PF"
-          value={data.kpis.ticketMedioPf != null
-            ? `R$ ${data.kpis.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-            : '—'}
-          subtitle="Valor médio por transação"
-        />
-        <KpiCard
-          title="Razão PJ/PF"
-          value={data.kpis.razaoPjPf?.toFixed(4) ?? '—'}
-          subtitle="Transações PJ sobre PF"
-        />
-        <KpiCard
-          title="Volume per Capita"
-          value={data.kpis.vlPerCapitaPf != null
-            ? `R$ ${data.kpis.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-            : '—'}
-          subtitle="Total transacionado por habitante"
-        />
-      </div>
-
-      {/* Mapa + Gráfico de barras */}
+      {/* Hero: Mapa (esquerda) + Painel direito (KPIs + Bar Chart) */}
       <div className="flex flex-col lg:flex-row gap-6 mb-6">
+
+        {/* Mapa — elemento hero */}
         <div className="flex-1">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <h2 className="text-base font-semibold text-gray-700 mb-3">Penetração por Município</h2>
-            <MapaCoropletico municipios={data.mapaMunicipios} />
+            <MapaCoropletico municipios={data.mapaMunicipios} height={540} />
           </div>
         </div>
-        <div className="lg:w-80">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full">
+
+        {/* Painel direito: KPIs + Bar Chart */}
+        <div className="flex flex-col gap-4 lg:w-[390px]">
+
+          {/* KPI Cards — grid 2x2 */}
+          <div className="grid grid-cols-2 gap-3">
+            <KpiCard
+              title="Penetração Média PF"
+              value={data.kpis.penetracaoMediaNacional?.toFixed(1) ?? '—'}
+              unit="%"
+              subtitle="Usuários Pix / População"
+            />
+            <KpiCard
+              title="Ticket Médio PF"
+              value={data.kpis.ticketMedioPf != null
+                ? `R$ ${data.kpis.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                : '—'}
+              subtitle="Valor médio por transação"
+            />
+            <KpiCard
+              title="Razão PJ/PF"
+              value={data.kpis.razaoPjPf?.toFixed(4) ?? '—'}
+              subtitle="Transações PJ sobre PF"
+            />
+            <KpiCard
+              title="Volume per Capita"
+              value={data.kpis.vlPerCapitaPf != null
+                ? `R$ ${data.kpis.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                : '—'}
+              subtitle="Total transacionado por habitante"
+            />
+          </div>
+
+          {/* Bar Chart — ocupa o espaço restante */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex-1">
             <h2 className="text-base font-semibold text-gray-700 mb-3">Penetração por Região</h2>
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart
                 data={data.penetracaoPorRegiao}
                 layout="vertical"
@@ -93,6 +99,7 @@ export function VisaoGeral() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+
         </div>
       </div>
 

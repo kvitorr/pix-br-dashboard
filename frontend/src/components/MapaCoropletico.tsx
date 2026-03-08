@@ -12,9 +12,10 @@ let ufCache: GeoJSON.FeatureCollection | null = null;
 
 interface MapaCoropléticoProps {
   municipios: MapaMunicipio[];
+  height?: number;
 }
 
-export function MapaCoropletico({ municipios }: MapaCoropléticoProps) {
+export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoProps) {
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<GeoJSONLayer | null>(null);
   const ufLayerRef = useRef<GeoJSONLayer | null>(null);
@@ -205,7 +206,7 @@ export function MapaCoropletico({ municipios }: MapaCoropléticoProps) {
   }, [municipios]);
 
   return (
-      <div className="relative rounded-xl overflow-hidden bg-slate-50" style={{ height: '480px', width: '100%' }}>      
+      <div className="relative rounded-xl overflow-hidden bg-slate-50" style={{ height: `${height}px`, width: '100%' }}>      
       
       {/* Container do Mapa */}
       <div ref={containerRef} className="absolute inset-0 z-0" />
