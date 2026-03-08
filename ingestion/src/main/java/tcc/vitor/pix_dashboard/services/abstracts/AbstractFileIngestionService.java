@@ -32,34 +32,30 @@ public abstract class AbstractFileIngestionService<T> {
 
     protected abstract String sourceName();
 
-    protected abstract String buildParams(String param);
-
     protected abstract List<T> parse(MultipartFile file) throws IOException;
 
-    protected abstract int persist(List<T> records, String param);
+    protected abstract int persist(List<T> records);
 
     protected abstract boolean isKnownException(RuntimeException e);
 
     protected abstract String knownErrorCode();
 
-    public IngestionRun ingest(MultipartFile file, String param) {
+    public IngestionRun ingest(MultipartFile file) {
         log().atInfo()
                 .addKeyValue("nomeArquivo", file.getOriginalFilename())
                 .addKeyValue("tamanhoBytes", file.getSize())
-                .addKeyValue("param", param)
                 .log("Iniciando ingestao de {}", sourceName());
 
-        IngestionRun run = runManager.createRunningRecord(source(), buildParams(param));
+        IngestionRun run = runManager.createRunningRecord(source(), null);
         long startTime = System.currentTimeMillis();
 
         try {
             List<T> records = parse(file);
-            int upserted = persist(records, param);
+            int upserted = persist(records);
             long durationMs = System.currentTimeMillis() - startTime;
             runManager.markAsSuccess(run, records.size(), upserted);
 
             log().atInfo()
-                    .addKeyValue("param", param)
                     .addKeyValue("totalRecords", records.size())
                     .addKeyValue("upserted", upserted)
                     .addKeyValue("durationMs", durationMs)
@@ -74,7 +70,6 @@ public abstract class AbstractFileIngestionService<T> {
                 runManager.markAsFailed(run, knownErrorCode(), e.getMessage());
 
                 log().atError()
-                        .addKeyValue("param", param)
                         .addKeyValue("error", e.getMessage())
                         .addKeyValue("durationMs", durationMs)
                         .log("Falha na ingestao de {}", sourceName());
@@ -85,7 +80,6 @@ public abstract class AbstractFileIngestionService<T> {
             runManager.markAsFailed(run, "UNEXPECTED_ERROR", e.getMessage());
 
             log().atError()
-                    .addKeyValue("param", param)
                     .addKeyValue("error", e.getMessage())
                     .addKeyValue("durationMs", durationMs)
                     .log("Erro inesperado na ingestao de {}", sourceName());
@@ -97,7 +91,6 @@ public abstract class AbstractFileIngestionService<T> {
             runManager.markAsFailed(run, "IO_ERROR", e.getMessage());
 
             log().atError()
-                    .addKeyValue("param", param)
                     .addKeyValue("error", e.getMessage())
                     .addKeyValue("durationMs", durationMs)
                     .log("Erro de leitura do arquivo na ingestao de {}", sourceName());

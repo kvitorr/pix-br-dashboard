@@ -93,6 +93,7 @@ public class BcbPixClient {
                         .queryParam("$top", PAGE_SIZE)
                         .queryParam("$format", "json")
                         .queryParam("$select", SELECT_FIELDS)
+                        .queryParam("$filter", "AnoMes eq " + database)
                         .build())
                 .retrieve()
                 .onStatus(status -> status.value() == 429 || status.value() == 503, (req, res) -> {

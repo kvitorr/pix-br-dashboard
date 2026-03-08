@@ -15,7 +15,7 @@ public class IdhmPersistenceService {
     private EntityManager entityManager;
 
     @Transactional
-    public int persist(List<IidhmDTO> records, int ano) {
+    public int persist(List<IidhmDTO> records) {
         int updated = 0;
         for (IidhmDTO dto : records) {
             updated += entityManager.createNativeQuery("""
@@ -30,7 +30,7 @@ public class IdhmPersistenceService {
                             idhm_renda       = EXCLUDED.idhm_renda,
                             updated_at       = now()
                     """)
-                    .setParameter("ano", ano)
+                    .setParameter("ano", dto.ano())
                     .setParameter("idhm", dto.idhm())
                     .setParameter("idhmLongevidade", dto.idhmLongevidade())
                     .setParameter("idhmEducacao", dto.idhmEducacao())

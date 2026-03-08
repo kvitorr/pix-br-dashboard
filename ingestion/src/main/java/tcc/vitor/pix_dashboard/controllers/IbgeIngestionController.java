@@ -56,9 +56,8 @@ public class IbgeIngestionController implements IbgeIngestionApi {
 
     @Override
     @PostMapping(value = "/idhm", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<IngestionRunResponse> ingestIdhm(@RequestParam("file") MultipartFile file,
-                                                            @RequestParam String ano) {
-        IngestionRun run = iidhmIngestionService.ingest(file, ano);
+    public ResponseEntity<IngestionRunResponse> ingestIdhm(@RequestParam("file") MultipartFile file) {
+        IngestionRun run = iidhmIngestionService.ingest(file);
         return ResponseEntity.ok(IngestionRunResponse.from(run));
     }
 }

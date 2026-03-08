@@ -44,18 +44,13 @@ public class IidhmIngestionService extends AbstractFileIngestionService<IidhmDTO
     }
 
     @Override
-    protected String buildParams(String param) {
-        return param != null ? "{\"ano\":\"" + param + "\"}" : "{}";
-    }
-
-    @Override
     protected List<IidhmDTO> parse(MultipartFile file) throws IOException {
         return iidhmCsvParser.parse(file.getInputStream());
     }
 
     @Override
-    protected int persist(List<IidhmDTO> records, String param) {
-        return idhmPersistenceService.persist(records, Integer.parseInt(param));
+    protected int persist(List<IidhmDTO> records) {
+        return idhmPersistenceService.persist(records);
     }
 
     @Override

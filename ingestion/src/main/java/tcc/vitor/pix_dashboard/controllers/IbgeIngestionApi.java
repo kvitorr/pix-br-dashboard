@@ -150,11 +150,5 @@ public interface IbgeIngestionApi {
                     description = "Arquivo CSV com dados de IDHM estadual (separado por tabulação)",
                     required = true
             )
-            @RequestParam("file") MultipartFile file,
-            @Parameter(
-                    description = "Ano de referência para os dados de IDHM (ex: 2021)",
-                    required = true,
-                    example = "2021"
-            )
-            @RequestParam String ano);
+            @RequestParam("file") MultipartFile file);
 }

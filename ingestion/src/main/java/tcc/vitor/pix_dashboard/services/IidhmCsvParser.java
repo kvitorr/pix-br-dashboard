@@ -25,6 +25,7 @@ public class IidhmCsvParser {
     private static final Logger log = LoggerFactory.getLogger(IidhmCsvParser.class);
 
     private static final String SEPARADOR = "\t";
+    private static final int IDX_ANO = 0;
     private static final int IDX_NOME = 3;
     private static final int IDX_IDHM = 4;
     private static final int IDX_IDHM_L = 5;
@@ -66,6 +67,7 @@ public class IidhmCsvParser {
                         continue;
                     }
 
+                    String ano = campos[IDX_ANO].trim();
                     String nomeEstado = campos[IDX_NOME].trim();
                     String idhmStr = campos[IDX_IDHM].trim();
                     String idhmLStr = campos[IDX_IDHM_L].trim();
@@ -82,6 +84,7 @@ public class IidhmCsvParser {
 
                     // Normaliza separador decimal (vírgula → ponto, caso o CSV use vírgula)
                     IidhmDTO dto = new IidhmDTO(
+                            parseInteger(ano),
                             nomeEstado,
                             parseBigDecimal(idhmStr),
                             parseBigDecimal(idhmLStr),
@@ -117,5 +120,12 @@ public class IidhmCsvParser {
         }
         // Normaliza separador decimal: vírgula → ponto
         return new BigDecimal(valor.replace(",", "."));
+    }
+
+    private Integer parseInteger(String valor) {
+        if (valor == null || valor.isBlank() || valor.equals("-")) {
+            return null;
+        }
+        return Integer.valueOf(valor);
     }
 }
