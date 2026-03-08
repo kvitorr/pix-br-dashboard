@@ -3,6 +3,8 @@ import type {
   DisparidadeRegionalResponse,
   FatoresSocioeconomicosResponse,
   EvolucaoTemporalResponse,
+  MunicipioListItem,
+  MunicipioDetalhes,
 } from '../types/dashboard';
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '/api/dashboard';
@@ -33,4 +35,10 @@ export const api = {
 
   evolucaoTemporal: (regiao?: string | null, dataInicio?: string | null, dataFim?: string | null) =>
     get<EvolucaoTemporalResponse>(buildUrl('/evolucao-temporal', { regiao, dataInicio, dataFim })),
+
+  municipios: () =>
+    get<MunicipioListItem[]>(buildUrl('/municipios', {})),
+
+  municipio: (ibge: string, anoMes?: string | null) =>
+    get<MunicipioDetalhes>(buildUrl(`/municipio/${ibge}`, { anoMes })),
 };

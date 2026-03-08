@@ -1,6 +1,8 @@
 package tcc.vitor.pix_dashboard.services;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import tcc.vitor.pix_dashboard.database.repositories.DashboardQueryRepository;
 import tcc.vitor.pix_dashboard.database.repositories.projections.SerieTemporalRegionalProjection;
 import tcc.vitor.pix_dashboard.services.dto.dashboard.*;
@@ -122,6 +124,23 @@ public class DashboardService {
         KpisEvolucaoDTO kpis = buildKpisEvolucao(ultimoMesPorRegiao, crescimento, serieTemporal.size());
 
         return new EvolucaoTemporalResponse(kpis, serieTemporal, crescimento, ticketEvolucao);
+    }
+
+    // =========================================================================
+    // Análise Municipal
+    // =========================================================================
+
+    public List<MunicipioListItemDTO> getMunicipios() {
+        return repository.findAllMunicipios();
+    }
+
+    public MunicipioDetalhesDTO getMunicipioDetalhes(String municipioIbge, String anoMes) {
+        LocalDate data = resolveAnoMes(anoMes);
+        return repository.findMunicipioDetalhes(municipioIbge, data)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Município não encontrado: " + municipioIbge + " para " + data
+                ));
     }
 
     // =========================================================================

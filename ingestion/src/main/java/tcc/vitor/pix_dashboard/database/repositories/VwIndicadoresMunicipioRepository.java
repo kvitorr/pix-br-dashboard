@@ -10,6 +10,7 @@ import tcc.vitor.pix_dashboard.database.repositories.projections.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface VwIndicadoresMunicipioRepository
         extends JpaRepository<VwIndicadoresMunicipio, VwIndicadoresMunicipioId> {
@@ -135,4 +136,38 @@ public interface VwIndicadoresMunicipioRepository
     List<ScatterMunicipioProjection> findScatterData(
             @Param("anoMes") LocalDate anoMes,
             @Param("regiao") String regiao);
+
+    @Query("""
+            SELECT v.id.municipioIbge AS municipioIbge,
+                   v.municipio        AS municipio,
+                   v.estado           AS estado,
+                   v.regiao           AS regiao,
+                   v.siglaRegiao      AS siglaRegiao,
+                   v.penetracaoPf     AS penetracaoPf
+            FROM VwIndicadoresMunicipio v
+            GROUP BY v.id.municipioIbge, v.municipio, v.estado, v.regiao, v.siglaRegiao
+            ORDER BY v.municipio
+            """)
+    List<MunicipioRankingProjection> findAllMunicipios();
+
+    @Query("""
+            SELECT v.id.municipioIbge AS municipioIbge,
+                   v.municipio        AS municipio,
+                   v.estado           AS estado,
+                   v.regiao           AS regiao,
+                   v.siglaRegiao      AS siglaRegiao,
+                   v.penetracaoPf     AS penetracaoPf,
+                   v.ticketMedioPf    AS ticketMedioPf,
+                   v.razaoPjPf        AS razaoPjPf,
+                   v.vlPerCapitaPf    AS vlPerCapitaPf,
+                   v.pibPerCapita     AS pibPerCapita,
+                   v.idhm             AS idhm,
+                   v.taxaUrbanizacao  AS taxaUrbanizacao
+            FROM VwIndicadoresMunicipio v
+            WHERE v.id.municipioIbge = :municipioIbge
+              AND v.id.anoMes = :anoMes
+            """)
+    Optional<MunicipioDetalhesProjection> findMunicipioDetalhes(
+            @Param("municipioIbge") String municipioIbge,
+            @Param("anoMes") LocalDate anoMes);
 }

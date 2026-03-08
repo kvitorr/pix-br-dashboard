@@ -73,6 +73,30 @@ export interface FatoresSocioeconomicosResponse {
   scatterData: ScatterMunicipio[];
 }
 
+// --- Análise Municipal ---
+export interface MunicipioListItem {
+  municipioIbge: string;
+  municipioNome: string;
+  estado: string;
+  regiao: string;
+  siglaRegiao: string;
+}
+
+export interface MunicipioDetalhes {
+  municipioIbge: string;
+  municipioNome: string;
+  estado: string;
+  regiao: string;
+  siglaRegiao: string;
+  penetracaoPf: number | null;
+  ticketMedioPf: number | null;
+  razaoPjPf: number | null;
+  vlPerCapitaPf: number | null;
+  pibPerCapita: number | null;
+  idhm: number | null;
+  taxaUrbanizacao: number | null;
+}
+
 // --- Evolução Temporal ---
 export interface RegiaoPenetracao {
   regiao: string;

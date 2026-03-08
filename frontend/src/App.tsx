@@ -4,6 +4,7 @@ import { VisaoGeral } from './pages/VisaoGeral';
 import { DisparidadeRegional } from './pages/DisparidadeRegional';
 import { FatoresSocioeconomicos } from './pages/FatoresSocioeconomicos';
 import { EvolucaoTemporal } from './pages/EvolucaoTemporal';
+import { AnaliseMunicipal } from './pages/AnaliseMunicipal';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
             <Route path="/disparidade-regional" element={<DisparidadeRegional />} />
             <Route path="/fatores-socioeconomicos" element={<FatoresSocioeconomicos />} />
             <Route path="/evolucao-temporal" element={<EvolucaoTemporal />} />
+            <Route path="/analise-municipal" element={<AnaliseMunicipal />} />
           </Routes>
         </main>
       </div>
