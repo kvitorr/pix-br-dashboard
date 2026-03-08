@@ -13,9 +13,10 @@ let ufCache: GeoJSON.FeatureCollection | null = null;
 interface MapaCoropléticoProps {
   municipios: MapaMunicipio[];
   height?: number;
+  useAbsoluteScale?: boolean;
 }
 
-export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoProps) {
+export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = false }: MapaCoropléticoProps) {
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<GeoJSONLayer | null>(null);
   const ufLayerRef = useRef<GeoJSONLayer | null>(null);
@@ -76,20 +77,31 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
           .filter((v): v is number => v != null)
           .sort((a, b) => a - b);
 
-        const thresholds = [1, 2, 3, 4].map(q => values[Math.floor((q * values.length) / 5)] ?? 0);
+        const ABSOLUTE_THRESHOLDS = [20, 40, 60, 80];
+        const thresholds = useAbsoluteScale
+          ? ABSOLUTE_THRESHOLDS
+          : [1, 2, 3, 4].map(q => values[Math.floor((q * values.length) / 5)] ?? 0);
         const dadosMap = new Map(municipios.map(m => [String(m.municipioIbge), m]));
 
         if (values.length > 0) {
-          const minVal = values[0] ?? 0;
-          const maxVal = values[values.length - 1] ?? 0;
-
-          setLegendItems([
-            { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: `${minVal.toFixed(1)}% a ${thresholds[0].toFixed(1)}%` },
-            { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: `${thresholds[0].toFixed(1)}% a ${thresholds[1].toFixed(1)}%` },
-            { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: `${thresholds[1].toFixed(1)}% a ${thresholds[2].toFixed(1)}%` },
-            { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: `${thresholds[2].toFixed(1)}% a ${thresholds[3].toFixed(1)}%` },
-            { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: `> ${thresholds[3].toFixed(1)}%` },
-          ]);
+          if (useAbsoluteScale) {
+            setLegendItems([
+              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: '0% a 20%' },
+              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: '20% a 40%' },
+              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: '40% a 60%' },
+              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: '60% a 80%' },
+              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: '> 80%' },
+            ]);
+          } else {
+            const minVal = values[0] ?? 0;
+            setLegendItems([
+              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: `${minVal.toFixed(1)}% a ${thresholds[0].toFixed(1)}%` },
+              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: `${thresholds[0].toFixed(1)}% a ${thresholds[1].toFixed(1)}%` },
+              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: `${thresholds[1].toFixed(1)}% a ${thresholds[2].toFixed(1)}%` },
+              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: `${thresholds[2].toFixed(1)}% a ${thresholds[3].toFixed(1)}%` },
+              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: `> ${thresholds[3].toFixed(1)}%` },
+            ]);
+          }
         }
 
         const featuresFiltradas = geojson.features.filter(feat => {
@@ -247,7 +259,7 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
     }
 
     return () => { isMounted = false; };
-  }, [municipios]);
+  }, [municipios, useAbsoluteScale]);
 
   return (
       <div className="relative rounded-xl overflow-hidden bg-slate-50" style={{ height: `${height}px`, width: '100%' }}>      

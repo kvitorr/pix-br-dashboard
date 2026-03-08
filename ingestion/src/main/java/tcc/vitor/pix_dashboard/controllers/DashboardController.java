@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.*;
 import tcc.vitor.pix_dashboard.services.DashboardService;
 import tcc.vitor.pix_dashboard.services.dto.dashboard.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController implements DashboardApi {
@@ -46,5 +48,19 @@ public class DashboardController implements DashboardApi {
             @RequestParam(required = false) String dataInicio,
             @RequestParam(required = false) String dataFim) {
         return ResponseEntity.ok(dashboardService.getEvolucaoTemporal(regiao, dataInicio, dataFim));
+    }
+
+    @Override
+    @GetMapping("/municipios")
+    public ResponseEntity<List<MunicipioListItemDTO>> getMunicipios() {
+        return ResponseEntity.ok(dashboardService.getMunicipios());
+    }
+
+    @Override
+    @GetMapping("/municipio/{municipioIbge}")
+    public ResponseEntity<MunicipioDetalhesDTO> getMunicipioDetalhes(
+            @PathVariable String municipioIbge,
+            @RequestParam(required = false) String anoMes) {
+        return ResponseEntity.ok(dashboardService.getMunicipioDetalhes(municipioIbge, anoMes));
     }
 }

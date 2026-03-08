@@ -8,6 +8,7 @@ import tcc.vitor.pix_dashboard.services.dto.dashboard.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Repository
@@ -118,6 +119,34 @@ public class DashboardQueryRepository {
                         p.getPibPerCapita(), p.getIdhm(), p.getTaxaUrbanizacao(), p.getPenetracaoPf()
                 ))
                 .toList();
+    }
+
+    // =========================================================================
+    // Análise Municipal
+    // =========================================================================
+
+    public List<MunicipioListItemDTO> findAllMunicipios() {
+        return indicadoresRepo.findAllMunicipios().stream()
+                .map(p -> new MunicipioListItemDTO(
+                        p.getMunicipioIbge(), p.getMunicipio(), p.getEstado(),
+                        p.getRegiao(), p.getSiglaRegiao()
+                ))
+                .toList();
+    }
+
+    public Optional<MunicipioDetalhesDTO> findMunicipioDetalhes(String municipioIbge, LocalDate anoMes) {
+        return indicadoresRepo.findMunicipioDetalhes(municipioIbge, anoMes)
+                .map(p -> new MunicipioDetalhesDTO(
+                        p.getMunicipioIbge(), p.getMunicipio(), p.getEstado(),
+                        p.getRegiao(), p.getSiglaRegiao(),
+                        round2(p.getPenetracaoPf()),
+                        round2(p.getTicketMedioPf()),
+                        round4(p.getRazaoPjPf()),
+                        round2(p.getVlPerCapitaPf()),
+                        round2(p.getPibPerCapita()),
+                        round4(p.getIdhm()),
+                        round2(p.getTaxaUrbanizacao())
+                ));
     }
 
     // =========================================================================
