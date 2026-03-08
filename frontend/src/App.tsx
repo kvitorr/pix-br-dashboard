@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Navbar';
 import { VisaoGeral } from './pages/VisaoGeral';
-import { DisparidadeRegional } from './pages/DisparidadeRegional';
 import { FatoresSocioeconomicos } from './pages/FatoresSocioeconomicos';
 import { EvolucaoTemporal } from './pages/EvolucaoTemporal';
 import { AnaliseMunicipal } from './pages/AnaliseMunicipal';
@@ -15,7 +14,6 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/visao-geral" replace />} />
             <Route path="/visao-geral" element={<VisaoGeral />} />
-            <Route path="/disparidade-regional" element={<DisparidadeRegional />} />
             <Route path="/fatores-socioeconomicos" element={<FatoresSocioeconomicos />} />
             <Route path="/evolucao-temporal" element={<EvolucaoTemporal />} />
             <Route path="/analise-municipal" element={<AnaliseMunicipal />} />
