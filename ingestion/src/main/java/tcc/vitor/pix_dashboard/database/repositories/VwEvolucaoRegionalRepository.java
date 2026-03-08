@@ -19,8 +19,8 @@ public interface VwEvolucaoRegionalRepository
                    v.penetracaoMedia AS penetracaoMedia,
                    v.ticketMedio     AS ticketMedio
             FROM VwEvolucaoRegional v
-            WHERE (:dataInicio IS NULL OR v.id.anoMes >= :dataInicio)
-              AND (:dataFim IS NULL OR v.id.anoMes <= :dataFim)
+            WHERE v.id.anoMes >= :dataInicio
+              AND v.id.anoMes <= :dataFim
               AND (:regiao IS NULL OR v.id.regiao = :regiao)
             ORDER BY v.id.anoMes, v.id.regiao
             """)
