@@ -72,6 +72,9 @@ public class DashboardService {
         LocalDate inicio = parseMesOpcional(dataInicio);
         LocalDate fim = parseMesOpcional(dataFim);
 
+        if (inicio == null) inicio = LocalDate.of(2020, 11, 1); // lançamento do Pix
+        if (fim == null) fim = LocalDate.now().withDayOfMonth(1);
+
         List<SerieTemporalRegionalProjection> rows =
                 repository.findSerieTemporalRegional(regiaoParam, inicio, fim);
 

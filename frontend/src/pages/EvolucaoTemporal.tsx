@@ -10,10 +10,18 @@ import { ErrorState } from '../components/ErrorState';
 import { KpiCard } from '../components/KpiCard';
 import { REGION_COLORS, REGIONS } from '../constants/colors';
 
+function toYearMonth(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export function EvolucaoTemporal() {
   const [regiao, setRegiao] = useState<string | null>(null);
-  const [dataInicio, setDataInicio] = useState<string | null>(null);
-  const [dataFim, setDataFim] = useState<string | null>(null);
+  const [dataInicio, setDataInicio] = useState<string | null>(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 5);
+    return toYearMonth(d);
+  });
+  const [dataFim, setDataFim] = useState<string | null>(() => toYearMonth(new Date()));
 
   const { data, loading, error } = useEvolucaoTemporal(regiao, dataInicio, dataFim);
 
@@ -38,7 +46,7 @@ export function EvolucaoTemporal() {
   const chartData = data.serieTemporal.map((ponto) => {
     const obj: Record<string, string | number> = { anoMes: ponto.anoMes };
     ponto.porRegiao.forEach((r) => {
-      obj[r.regiao] = r.penetracaoMedia;
+      if (r.penetracaoMedia != null) obj[r.regiao] = r.penetracaoMedia;
     });
     return obj;
   });
@@ -106,7 +114,7 @@ export function EvolucaoTemporal() {
               angle={-30}
               textAnchor="end"
             />
-            <YAxis unit="%" tick={{ fontSize: 10 }} />
+            <YAxis unit="%" tick={{ fontSize: 10 }} domain={[0, 'auto']} />
             <Tooltip formatter={(v) => [`${Number(v).toFixed(1)}%`]} />
             <Legend />
             {regioes.map((r) => (
