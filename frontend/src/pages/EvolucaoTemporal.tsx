@@ -42,11 +42,21 @@ export function EvolucaoTemporal() {
   if (error) return <ErrorState message={error.message} />;
   if (!data) return null;
 
+  // Normaliza nomes de região de MAIÚSCULAS (API) para title case (REGIONS/REGION_COLORS)
+  const REGIAO_LABEL: Record<string, string> = {
+    'NORTE': 'Norte',
+    'NORDESTE': 'Nordeste',
+    'CENTRO-OESTE': 'Centro-Oeste',
+    'SUDESTE': 'Sudeste',
+    'SUL': 'Sul',
+  };
+
   // Transformar serieTemporal para formato Recharts: [{anoMes, Norte: x, Nordeste: y, ...}]
   const chartData = data.serieTemporal.map((ponto) => {
     const obj: Record<string, string | number> = { anoMes: ponto.anoMes };
     ponto.porRegiao.forEach((r) => {
-      if (r.penetracaoMedia != null) obj[r.regiao] = r.penetracaoMedia;
+      const key = REGIAO_LABEL[r.regiao] ?? r.regiao;
+      if (r.penetracaoMedia != null) obj[key] = r.penetracaoMedia;
     });
     return obj;
   });
