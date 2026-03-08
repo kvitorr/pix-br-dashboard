@@ -5,6 +5,7 @@
 // --- Visão Geral ---
 export interface MapaMunicipio {
   municipioIbge: string;
+  municipioNome: string;
   penetracaoPf: number | null;
 }
 

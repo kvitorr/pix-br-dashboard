@@ -47,7 +47,7 @@ public class DashboardQueryRepository {
 
     public List<MapaMunicipioDTO> findMapaMunicipios(LocalDate anoMes, String regiao) {
         return indicadoresRepo.findMapaMunicipios(anoMes, regiao).stream()
-                .map(p -> new MapaMunicipioDTO(p.getMunicipioIbge(), p.getPenetracaoPf()))
+                .map(p -> new MapaMunicipioDTO(p.getMunicipioIbge(), p.getMunicipioNome(), p.getPenetracaoPf()))
                 .toList();
     }
 

@@ -32,7 +32,8 @@ public interface VwIndicadoresMunicipioRepository
 
     @Query("""
             SELECT v.id.municipioIbge AS municipioIbge,
-                   v.penetracaoPf     AS penetracaoPf
+                   v.municipio AS municipioNome,
+                   v.penetracaoPf AS penetracaoPf
             FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes = :anoMes
               AND (:regiao IS NULL OR v.regiao = :regiao)
