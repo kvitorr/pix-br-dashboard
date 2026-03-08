@@ -20,7 +20,6 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
   const layerRef = useRef<GeoJSONLayer | null>(null);
   const ufLayerRef = useRef<GeoJSONLayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isDraggingRef = useRef(false);
   
   const [isLoading, setIsLoading] = useState(!geojsonCache);
   const [legendItems, setLegendItems] = useState<{color: string, label: string}[]>([]);
@@ -45,9 +44,6 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
         ufPane.style.pointerEvents = 'none'; // CRUCIAL: O mouse atravessa essa camada!
       }
       // -----------------------------------------------------------------------
-
-      map.on('dragstart', () => { isDraggingRef.current = true; });
-      map.on('dragend',   () => { setTimeout(() => { isDraggingRef.current = false; }, 50); });
 
       mapRef.current = map;
     } catch (err) {
@@ -132,10 +128,6 @@ export function MapaCoropletico({ municipios, height = 480 }: MapaCoropléticoPr
             // LÓGICA DE INTERATIVIDADE CORRIGIDA
             layer.on({
               mouseover: (e) => {
-                if (isDraggingRef.current) {
-                  e.target.closeTooltip();
-                  return;
-                }
                 const target = e.target;
                 
                 target.setStyle({
