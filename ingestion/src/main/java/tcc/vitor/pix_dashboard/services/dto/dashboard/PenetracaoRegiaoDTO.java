@@ -1,3 +1,9 @@
 package tcc.vitor.pix_dashboard.services.dto.dashboard;
 
-public record PenetracaoRegiaoDTO(String regiao, String siglaRegiao, Double penetracaoMedia) {}
+public record PenetracaoRegiaoDTO(
+        String regiao,
+        String siglaRegiao,
+        Double penetracaoMedia,
+        Double ticketMedioMedia,
+        Double razaoMedia,
+        Double perCapitaMedia) {}

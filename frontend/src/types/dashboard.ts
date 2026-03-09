@@ -7,12 +7,18 @@ export interface MapaMunicipio {
   municipioIbge: string;
   municipioNome: string;
   penetracaoPf: number | null;
+  ticketMedioPf: number | null;
+  razaoPjPf: number | null;
+  vlPerCapitaPf: number | null;
 }
 
 export interface PenetracaoRegiao {
   regiao: string;
   siglaRegiao: string;
   penetracaoMedia: number;
+  ticketMedioMedia: number | null;
+  razaoMedia: number | null;
+  perCapitaMedia: number | null;
 }
 
 export interface KpisVisaoGeral {

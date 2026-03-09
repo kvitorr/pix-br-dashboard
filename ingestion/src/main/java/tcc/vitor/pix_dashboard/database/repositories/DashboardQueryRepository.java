@@ -52,13 +52,25 @@ public class DashboardQueryRepository {
 
     public List<MapaMunicipioDTO> findMapaMunicipios(LocalDate anoMes, String regiao) {
         return indicadoresRepo.findMapaMunicipios(anoMes, regiao).stream()
-                .map(p -> new MapaMunicipioDTO(p.getMunicipioIbge(), p.getMunicipioNome(), p.getPenetracaoPf()))
+                .map(p -> new MapaMunicipioDTO(
+                        p.getMunicipioIbge(),
+                        p.getMunicipioNome(),
+                        p.getPenetracaoPf(),
+                        round2(p.getTicketMedioPf()),
+                        round4(p.getRazaoPjPf()),
+                        round2(p.getVlPerCapitaPf())))
                 .toList();
     }
 
     public List<PenetracaoRegiaoDTO> findPenetracaoPorRegiao(LocalDate anoMes, String regiao) {
         return indicadoresRepo.findPenetracaoPorRegiao(anoMes, regiao).stream()
-                .map(p -> new PenetracaoRegiaoDTO(p.getRegiao(), p.getSiglaRegiao(), round2(p.getPenetracaoMedia())))
+                .map(p -> new PenetracaoRegiaoDTO(
+                        p.getRegiao(),
+                        p.getSiglaRegiao(),
+                        round2(p.getPenetracaoMedia()),
+                        round2(p.getTicketMedioMedia()),
+                        round4(p.getRazaoMedia()),
+                        round2(p.getPerCapitaMedia())))
                 .toList();
     }
 

@@ -33,8 +33,11 @@ public interface VwIndicadoresMunicipioRepository
 
     @Query("""
             SELECT v.id.municipioIbge AS municipioIbge,
-                   v.municipio AS municipioNome,
-                   v.penetracaoPf AS penetracaoPf
+                   v.municipio        AS municipioNome,
+                   v.penetracaoPf     AS penetracaoPf,
+                   v.ticketMedioPf    AS ticketMedioPf,
+                   v.razaoPjPf        AS razaoPjPf,
+                   v.vlPerCapitaPf    AS vlPerCapitaPf
             FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes = :anoMes
               AND (:regiao IS NULL OR v.regiao = :regiao)
@@ -44,9 +47,12 @@ public interface VwIndicadoresMunicipioRepository
             @Param("regiao") String regiao);
 
     @Query("""
-            SELECT v.regiao       AS regiao,
-                   v.siglaRegiao  AS siglaRegiao,
-                   AVG(v.penetracaoPf) AS penetracaoMedia
+            SELECT v.regiao              AS regiao,
+                   v.siglaRegiao         AS siglaRegiao,
+                   AVG(v.penetracaoPf)   AS penetracaoMedia,
+                   AVG(v.ticketMedioPf)  AS ticketMedioMedia,
+                   AVG(v.razaoPjPf)      AS razaoMedia,
+                   AVG(v.vlPerCapitaPf)  AS perCapitaMedia
             FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes = :anoMes
               AND (:regiao IS NULL OR v.regiao = :regiao)

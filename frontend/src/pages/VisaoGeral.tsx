@@ -9,9 +9,22 @@ import { FilterBar } from '../components/FilterBar';
 import { ErrorState } from '../components/ErrorState';
 import { VisaoGeralSkeleton } from '../components/Skeleton';
 import { MapaCoropletico } from '../components/MapaCoropletico';
+import type { MetricFormato } from '../components/MapaCoropletico';
 import { REGION_COLORS, TOOLTIP_STYLE } from '../constants/colors';
 import { useDelayedLoading } from '../hooks/useDelayedLoading';
-import type { MunicipioAtipico, MunicipioRanking } from '../types/dashboard';
+import type { MapaMunicipio, MunicipioAtipico, MunicipioRanking, PenetracaoRegiao } from '../types/dashboard';
+
+const VARIAVEIS_MAPA: Array<{
+  value: keyof MapaMunicipio;
+  label: string;
+  formato: MetricFormato;
+  campoRegiao: keyof PenetracaoRegiao;
+}> = [
+  { value: 'penetracaoPf',  label: 'Penetração (%)',         formato: 'percent',  campoRegiao: 'penetracaoMedia'  },
+  { value: 'ticketMedioPf', label: 'Ticket Médio (R$)',      formato: 'currency', campoRegiao: 'ticketMedioMedia' },
+  { value: 'razaoPjPf',     label: 'Razão PJ/PF',            formato: 'decimal',  campoRegiao: 'razaoMedia'       },
+  { value: 'vlPerCapitaPf', label: 'Volume Per Capita (R$)', formato: 'currency', campoRegiao: 'perCapitaMedia'   },
+];
 
 function RankingMunicipiosCard({ top10, bottom10 }: { top10: MunicipioRanking[]; bottom10: MunicipioRanking[] }) {
   const [active, setActive] = useState<'top10' | 'bottom10'>('top10');
@@ -152,6 +165,9 @@ export function VisaoGeral() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [metricaIdx, setMetricaIdx] = useState(0);
+  const metricaConfig = VARIAVEIS_MAPA[metricaIdx] ?? VARIAVEIS_MAPA[0]!;
+
   const { data, loading, error } = useVisaoGeral(regiao, anoMes);
   const showSkeleton = useDelayedLoading(loading);
   const { data: dispData } = useDisparidadeRegional(regiao, anoMes);
@@ -160,12 +176,26 @@ export function VisaoGeral() {
     <div>
       <h1 className="text-[20px] font-bold text-main mb-4">Visão Geral Nacional</h1>
 
-      <FilterBar
-        regiao={regiao}
-        anoMes={anoMes}
-        onRegiaoChange={setRegiao}
-        onAnoMesChange={setAnoMes}
-      />
+      <div className="flex flex-wrap items-end gap-4 mb-6">
+        <FilterBar
+          regiao={regiao}
+          anoMes={anoMes}
+          onRegiaoChange={setRegiao}
+          onAnoMesChange={setAnoMes}
+        />
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-muted whitespace-nowrap">Métrica:</label>
+          <select
+            value={metricaIdx}
+            onChange={(e) => setMetricaIdx(Number(e.target.value))}
+            className="text-[13px] border border-border rounded-md px-2 py-1.5 bg-white text-main focus:outline-none focus:ring-1 focus:ring-blue-400"
+          >
+            {VARIAVEIS_MAPA.map((v, i) => (
+              <option key={v.value} value={i}>{v.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
@@ -182,10 +212,16 @@ export function VisaoGeral() {
               <div className="flex-1">
                 <div className="bg-white rounded-card border border-border h-full flex flex-col">
                   <div className="px-[18px] py-[14px] border-b border-border-s">
-                    <h2 className="text-[13px] font-semibold text-main">Penetração por Município</h2>
+                    <h2 className="text-[13px] font-semibold text-main">{metricaConfig.label} por Município</h2>
                   </div>
                   <div className="px-[18px] py-[12px] flex-1">
-                    <MapaCoropletico municipios={data.mapaMunicipios} height={540} />
+                    <MapaCoropletico
+                      municipios={data.mapaMunicipios}
+                      metricKey={metricaConfig.value}
+                      metricLabel={metricaConfig.label}
+                      metricFormato={metricaConfig.formato}
+                      height={540}
+                    />
                   </div>
                 </div>
               </div>
@@ -225,7 +261,7 @@ export function VisaoGeral() {
                 {/* Bar Chart — ocupa o espaço restante */}
                 <div className="bg-white rounded-card border border-border flex-1">
                   <div className="px-[18px] py-[14px] border-b border-border-s">
-                    <h2 className="text-[13px] font-semibold text-main">Penetração por Região</h2>
+                    <h2 className="text-[13px] font-semibold text-main">{metricaConfig.label} por Região</h2>
                   </div>
                   <div className="px-[18px] py-[12px]">
                     <ResponsiveContainer width="100%" height={220}>
@@ -234,16 +270,25 @@ export function VisaoGeral() {
                         layout="vertical"
                         margin={{ left: 60, right: 20 }}
                       >
-                        <XAxis type="number" unit="%" tick={{ fontSize: 11 }} />
+                        <XAxis
+                          type="number"
+                          unit={metricaConfig.formato === 'percent' ? '%' : ''}
+                          tick={{ fontSize: 11 }}
+                        />
                         <YAxis type="category" dataKey="regiao" tick={{ fontSize: 11 }} width={60} />
                         <Tooltip
-                          formatter={(v) => [`${v}%`, 'Penetração']}
+                          formatter={(v) => {
+                            const num = Number(v);
+                            if (metricaConfig.formato === 'percent') return [`${num.toFixed(1)}%`, metricaConfig.label];
+                            if (metricaConfig.formato === 'currency') return [`R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, metricaConfig.label];
+                            return [num.toFixed(4), metricaConfig.label];
+                          }}
                           contentStyle={TOOLTIP_STYLE.contentStyle}
                           labelStyle={TOOLTIP_STYLE.labelStyle}
                           itemStyle={TOOLTIP_STYLE.itemStyle}
                           cursor={TOOLTIP_STYLE.cursor}
                         />
-                        <Bar dataKey="penetracaoMedia" radius={[0, 4, 4, 0]}>
+                        <Bar dataKey={metricaConfig.campoRegiao as string} radius={[0, 4, 4, 0]}>
                           {data.penetracaoPorRegiao.map((entry) => (
                             <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#64748b'} />
                           ))}

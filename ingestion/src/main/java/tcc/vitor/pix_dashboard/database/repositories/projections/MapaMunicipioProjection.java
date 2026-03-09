@@ -4,4 +4,7 @@ public interface MapaMunicipioProjection {
     String getMunicipioIbge();
     String getMunicipioNome();
     Double getPenetracaoPf();
+    Double getTicketMedioPf();
+    Double getRazaoPjPf();
+    Double getVlPerCapitaPf();
 }
