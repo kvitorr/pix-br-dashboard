@@ -129,6 +129,10 @@ public class DashboardService {
         return repository.findAllMunicipios();
     }
 
+    public List<MunicipioListItemDTO> searchMunicipios(String nome, int limit) {
+        return repository.searchMunicipios(nome, limit);
+    }
+
     public MunicipioDetalhesDTO getMunicipioDetalhes(String municipioIbge, String anoMes) {
         LocalDate data = resolveAnoMes(anoMes);
         return repository.findMunicipioDetalhes(municipioIbge, data)

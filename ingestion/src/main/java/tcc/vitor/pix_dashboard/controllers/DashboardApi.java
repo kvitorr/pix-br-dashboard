@@ -60,6 +60,18 @@ public interface DashboardApi {
     ResponseEntity<List<MunicipioListItemDTO>> getMunicipios();
 
     @Operation(
+            summary = "Busca de Municípios por Nome",
+            description = "Retorna até `limit` municípios cujo nome contenha o termo buscado. Para uso em autocomplete com debounce.",
+            responses = @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
+    )
+    ResponseEntity<List<MunicipioListItemDTO>> searchMunicipios(
+            @Parameter(description = "Fragmento do nome do município (mínimo 1 caractere)")
+            @RequestParam String nome,
+            @Parameter(description = "Número máximo de resultados (padrão: 10)")
+            @RequestParam(defaultValue = "10") int limit
+    );
+
+    @Operation(
             summary = "Detalhes de Município",
             description = "Retorna KPIs e indicadores socioeconômicos de um município específico.",
             responses = {
