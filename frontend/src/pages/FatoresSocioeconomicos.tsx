@@ -236,7 +236,7 @@ function ScatterPlotCard({
 
       <div className="px-2 py-3 flex-1">
         <ResponsiveContainer width="100%" height={260}>
-          <ComposedChart data={trendLine} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+          <ComposedChart margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
             <XAxis
               dataKey="x"
@@ -264,8 +264,9 @@ function ScatterPlotCard({
                 />
               }
             />
-            {/* Linha de tendência — usa os dados do ComposedChart (trendLine) */}
+            {/* Linha de tendência — data próprio para não contaminar os Scatter */}
             <Line
+              data={trendLine}
               type="linear"
               dataKey="y"
               dot={false}
