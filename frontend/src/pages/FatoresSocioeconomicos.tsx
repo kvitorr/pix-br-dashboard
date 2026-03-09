@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   ComposedChart, Scatter, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer,
+  Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { useFatoresSocioeconomicos } from '../hooks/useFatoresSocioeconomicos';
 import { LoadingState } from '../components/LoadingState';
@@ -21,13 +21,36 @@ const VARIAVEIS_Y = [
 const FATORES_CONFIG = [
   { key: 'pibPerCapita'    as const, label: 'PIB per Capita',      xField: 'pibPerCapita'    as keyof ScatterMunicipio, icon: '💰', xUnit: 'R$' },
   { key: 'idhm'            as const, label: 'IDHM',                xField: 'idhm'            as keyof ScatterMunicipio, icon: '🎓', xUnit: ''   },
-  { key: 'taxaUrbanizacao' as const, label: 'Taxa de Urbanização',  xField: 'taxaUrbanizacao' as keyof ScatterMunicipio, icon: '🏙️', xUnit: '%'  },
+  { key: 'taxaUrbanizacao' as const, label: 'Taxa de Urbanização', xField: 'taxaUrbanizacao' as keyof ScatterMunicipio, icon: '🏙️', xUnit: '%'  },
 ] as const;
 
 const INPUT_CLASS =
   'border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatRegiao(regiao: string | undefined): string {
+  if (!regiao) return '';
+  return regiao.split('-').map(palavra => 
+    palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase()
+  ).join('-');
+}
+
+function calcRobustDomain(values: number[]): [number, number] {
+  if (values.length < 5) {
+    return [Math.min(...values), Math.max(...values)];
+  }
+  
+  const sorted = [...values].sort((a, b) => a - b);
+  const pMin = sorted[Math.floor(sorted.length * 0.02)];
+  const pMax = sorted[Math.floor(sorted.length * 0.98)];
+  
+  const margin = (pMax - pMin) * 0.05;
+  const lowerBound = pMin - margin;
+  const upperBound = pMax + margin;
+
+  return [Math.max(0, lowerBound), upperBound];
+}
 
 function calcTrendLine(points: { x: number; y: number }[]) {
   const n = points.length;
@@ -78,6 +101,12 @@ function formatXFull(value: number, unit: string): string {
   if (unit === 'R$') return `R$ ${value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
   if (unit === '%') return `${value.toFixed(1)}%`;
   return value.toFixed(4);
+}
+
+function yUnit(label: string): string {
+  if (label.includes('%')) return '%';
+  if (label.includes('R$')) return '';
+  return '';
 }
 
 // ─── Sub-componentes ─────────────────────────────────────────────────────────
@@ -148,11 +177,11 @@ function ScatterTooltipContent({
 }) {
   if (!active || !payload?.[0]) return null;
   const pt: ScatterPoint = payload[0].payload;
-  if (pt.municipio == null) return null; // trend line point, não mostrar tooltip
+  if (pt.municipio == null) return null;
   return (
     <div style={{ ...TOOLTIP_STYLE.contentStyle, minWidth: 180 }}>
-      <p style={{ fontWeight: 700, marginBottom: 6 }}>
-        {pt.municipio} – {pt.estado}
+      <p style={{ fontWeight: 700, marginBottom: 6, textTransform: 'capitalize' }}>
+        {pt.municipio.toLowerCase()} – {pt.estado.toLowerCase()}
       </p>
       <p style={TOOLTIP_STYLE.itemStyle}>
         {xLabel}: {formatXFull(pt.x, xUnit)}
@@ -165,12 +194,6 @@ function ScatterTooltipContent({
       </p>
     </div>
   );
-}
-
-function yUnit(label: string): string {
-  if (label.includes('%')) return '%';
-  if (label.includes('R$')) return '';
-  return '';
 }
 
 function ScatterPlotCard({
@@ -194,31 +217,32 @@ function ScatterPlotCard({
         y: getYValue(m, variavelY) as number,
         municipio: m.municipio,
         estado: m.estado,
-        regiao: m.regiao,
+        regiao: formatRegiao(m.regiao), 
       }));
   }, [scatterData, fator.xField, variavelY]);
 
   const trendLine = useMemo(() => calcTrendLine(allPoints), [allPoints]);
 
+  const renderPoints = useMemo(() => {
+    const MAX_POINTS = 400; 
+    if (allPoints.length <= MAX_POINTS) return allPoints;
+
+    const step = Math.max(1, Math.floor(allPoints.length / MAX_POINTS));
+    return allPoints
+      .filter((_, i) => i % step === 0)
+      .slice(0, MAX_POINTS); 
+  }, [allPoints]);
+
   const xDomain = useMemo<[number, number]>(() => {
     if (allPoints.length === 0) return [0, 1];
     const xs = allPoints.map((p) => p.x);
-    return [Math.min(...xs), Math.max(...xs)];
+    return calcRobustDomain(xs);
   }, [allPoints]);
 
   const yDomain = useMemo<[number, number]>(() => {
     if (allPoints.length === 0) return [0, 1];
     const ys = allPoints.map((p) => p.y);
-    return [Math.min(...ys), Math.max(...ys)];
-  }, [allPoints]);
-
-  const byRegion = useMemo(() => {
-    const map: Record<string, ScatterPoint[]> = {};
-    REGIONS.forEach((r) => (map[r] = []));
-    allPoints.forEach((p) => {
-      if (map[p.regiao]) map[p.regiao].push(p);
-    });
-    return map;
+    return calcRobustDomain(ys);
   }, [allPoints]);
 
   const forcaLabel = corr
@@ -242,6 +266,7 @@ function ScatterPlotCard({
               dataKey="x"
               type="number"
               domain={xDomain}
+              allowDataOverflow={true}
               tickFormatter={(v) => formatXTick(v, fator.xUnit)}
               tick={{ fontSize: 10, fill: '#94a3b8' }}
               tickLine={false}
@@ -250,6 +275,7 @@ function ScatterPlotCard({
               dataKey="y"
               type="number"
               domain={yDomain}
+              allowDataOverflow={true}
               tickFormatter={(v) => `${v.toFixed(0)}${yUnit(yLabel)}`}
               tick={{ fontSize: 10, fill: '#94a3b8' }}
               tickLine={false}
@@ -264,7 +290,7 @@ function ScatterPlotCard({
                 />
               }
             />
-            {/* Linha de tendência — data próprio para não contaminar os Scatter */}
+            
             <Line
               data={trendLine}
               type="linear"
@@ -275,23 +301,26 @@ function ScatterPlotCard({
               strokeWidth={1.5}
               isAnimationActive={false}
             />
-            {/* Pontos por região — cada Scatter usa seu próprio data */}
-            {REGIONS.map((regiao) => (
-              <Scatter
-                key={regiao}
-                name={regiao}
-                data={byRegion[regiao]}
-                fill={REGION_COLORS[regiao]}
-                opacity={0.75}
-                r={3}
-                isAnimationActive={false}
-              />
-            ))}
+            
+            <Scatter
+              data={renderPoints}
+              dataKey="y"
+              r={3}
+              opacity={0.75}
+              isAnimationActive={false}
+            >
+              {renderPoints.map((entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={REGION_COLORS[entry.regiao] ?? '#94a3b8'} 
+                />
+              ))}
+            </Scatter>
+            
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Footer */}
       {corr && (
         <div className="px-[18px] pb-[12px] flex items-center justify-between">
           <span className="text-[11px] text-secondary">
@@ -300,7 +329,6 @@ function ScatterPlotCard({
         </div>
       )}
 
-      {/* Legenda das regiões */}
       <div className="px-[18px] pb-[12px] flex flex-wrap gap-x-3 gap-y-1">
         {REGIONS.map((r) => (
           <span key={r} className="flex items-center gap-1 text-[11px] text-secondary">
@@ -335,15 +363,15 @@ export function FatoresSocioeconomicos() {
 
   return (
     <div>
-      {/* Header */}
       <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
         <h1 className="text-[20px] font-bold text-main">Fatores Socioeconômicos</h1>
         {data && (
-          <span className="text-[12px] text-muted self-center">{subtitle}</span>
+          <span className={`text-[12px] text-muted self-center transition-opacity ${loading ? 'opacity-50' : 'opacity-100'}`}>
+            {subtitle}
+          </span>
         )}
       </div>
 
-      {/* FilterBar customizado com Variável Y */}
       <div className="flex flex-wrap gap-4 mb-6 px-[16px] py-[10px] bg-white rounded-filter border border-border">
         <div className="flex items-center gap-2">
           <label className="text-[13px] font-medium text-main">Região:</label>
@@ -381,45 +409,57 @@ export function FatoresSocioeconomicos() {
         </div>
       </div>
 
-      {loading && <LoadingState />}
-      {error && <ErrorState message={error.message} />}
+      {error ? (
+        <ErrorState message={error.message} />
+      ) : !data && loading ? (
+        // Estado de Loading APENAS no primeiro carregamento (quando ainda não há data)
+        <div className="flex justify-center items-center min-h-[400px]">
+          <LoadingState />
+        </div>
+      ) : data ? (
+        // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading se estiver buscando novidades
+        <div className="relative">
+          {/* Overlay de Loading transparente sobre os gráficos antigos */}
+          {loading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/40 backdrop-blur-[1px]">
+              <LoadingState />
+            </div>
+          )}
 
-      {data && (
-        <>
-          {/* KPI cards — Spearman */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            {FATORES_CONFIG.map((fator) => {
-              const corr = data.correlacoes.find((c) => c.fator === fator.key);
-              return (
-                <SpearmanKpiCard
-                  key={fator.key}
-                  fator={fator}
-                  corr={corr}
-                  yLabel={yLabel}
-                />
-              );
-            })}
+          {/* O container ganha opacity-50 e pointer-events-none (impede cliques) enquanto carrega */}
+          <div className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+              {FATORES_CONFIG.map((fator) => {
+                const corr = data.correlacoes.find((c) => c.fator === fator.key);
+                return (
+                  <SpearmanKpiCard
+                    key={fator.key}
+                    fator={fator}
+                    corr={corr}
+                    yLabel={yLabel}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+              {FATORES_CONFIG.map((fator) => {
+                const corr = data.correlacoes.find((c) => c.fator === fator.key);
+                return (
+                  <ScatterPlotCard
+                    key={fator.key}
+                    fator={fator}
+                    scatterData={data.scatterData}
+                    variavelY={variavelY}
+                    corr={corr}
+                    yLabel={yLabel}
+                  />
+                );
+              })}
+            </div>
           </div>
-
-          {/* Scatter plots */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            {FATORES_CONFIG.map((fator) => {
-              const corr = data.correlacoes.find((c) => c.fator === fator.key);
-              return (
-                <ScatterPlotCard
-                  key={fator.key}
-                  fator={fator}
-                  scatterData={data.scatterData}
-                  variavelY={variavelY}
-                  corr={corr}
-                  yLabel={yLabel}
-                />
-              );
-            })}
-          </div>
-
-        </>
-      )}
+        </div>
+      ) : null}
     </div>
   );
 }

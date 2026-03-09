@@ -154,10 +154,6 @@ export function VisaoGeral() {
   const { data, loading, error } = useVisaoGeral(regiao, anoMes);
   const { data: dispData } = useDisparidadeRegional(regiao, anoMes);
 
-  if (loading) return <><FilterBar regiao={regiao} anoMes={anoMes} onRegiaoChange={setRegiao} onAnoMesChange={setAnoMes} /><LoadingState /></>;
-  if (error) return <ErrorState message={error.message} />;
-  if (!data) return null;
-
   return (
     <div>
       <h1 className="text-[20px] font-bold text-main mb-4">Visão Geral Nacional</h1>
@@ -169,159 +165,185 @@ export function VisaoGeral() {
         onAnoMesChange={setAnoMes}
       />
 
-      {/* Hero: Mapa (esquerda) + Painel direito (KPIs + Bar Chart) */}
-      <div className="flex flex-col lg:flex-row gap-6 mb-6">
-
-        {/* Mapa — elemento hero */}
-        <div className="flex-1">
-          <div className="bg-white rounded-card border border-border">
-            <div className="px-[18px] py-[14px] border-b border-border-s">
-              <h2 className="text-[13px] font-semibold text-main">Penetração por Município</h2>
-            </div>
-            <div className="px-[18px] py-[12px]">
-              <MapaCoropletico municipios={data.mapaMunicipios} height={540} />
-            </div>
-          </div>
+      {/* Tratamento de Erro, Loading Inicial ou Dados */}
+      {error ? (
+        <ErrorState message={error.message} />
+      ) : !data && loading ? (
+        // Estado de Loading APENAS no primeiro carregamento
+        <div className="flex justify-center items-center min-h-[400px]">
+          <LoadingState />
         </div>
-
-        {/* Painel direito: KPIs + Bar Chart */}
-        <div className="flex flex-col gap-4 lg:w-[390px]">
-
-          {/* KPI Cards — grid 2x2 */}
-          <div className="grid grid-cols-2 gap-3">
-            <KpiCard
-              title="Penetração Média PF"
-              value={data.kpis.penetracaoMediaNacional?.toFixed(1) ?? '—'}
-              unit="%"
-              subtitle="Usuários Pix / População"
-            />
-            <KpiCard
-              title="Ticket Médio PF"
-              value={data.kpis.ticketMedioPf != null
-                ? `R$ ${data.kpis.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                : '—'}
-              subtitle="Valor médio por transação"
-            />
-            <KpiCard
-              title="Razão PJ/PF"
-              value={data.kpis.razaoPjPf?.toFixed(4) ?? '—'}
-              subtitle="Transações PJ sobre PF"
-            />
-            <KpiCard
-              title="Volume per Capita"
-              value={data.kpis.vlPerCapitaPf != null
-                ? `R$ ${data.kpis.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                : '—'}
-              subtitle="Total transacionado por habitante"
-            />
-          </div>
-
-          {/* Bar Chart — ocupa o espaço restante */}
-          <div className="bg-white rounded-card border border-border flex-1">
-            <div className="px-[18px] py-[14px] border-b border-border-s">
-              <h2 className="text-[13px] font-semibold text-main">Penetração por Região</h2>
+      ) : data ? (
+        // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading
+        <div className="relative mt-6">
+          
+          {/* Overlay de Loading transparente sobre a tela antiga */}
+          {loading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/40 backdrop-blur-[1px]">
+              <LoadingState />
             </div>
-            <div className="px-[18px] py-[12px]">
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={data.penetracaoPorRegiao}
-                  layout="vertical"
-                  margin={{ left: 60, right: 20 }}
-                >
-                  <XAxis type="number" unit="%" tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="regiao" tick={{ fontSize: 11 }} width={60} />
-                  <Tooltip
-                    formatter={(v) => [`${v}%`, 'Penetração']}
-                    contentStyle={TOOLTIP_STYLE.contentStyle}
-                    labelStyle={TOOLTIP_STYLE.labelStyle}
-                    itemStyle={TOOLTIP_STYLE.itemStyle}
-                    cursor={TOOLTIP_STYLE.cursor}
+          )}
+
+          {/* O container ganha opacity-50 e perde o clique enquanto carrega */}
+          <div className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            
+            {/* Hero: Mapa (esquerda) + Painel direito (KPIs + Bar Chart) */}
+            <div className="flex flex-col lg:flex-row gap-6 mb-6">
+
+              {/* Mapa — elemento hero */}
+              <div className="flex-1">
+                <div className="bg-white rounded-card border border-border h-full flex flex-col">
+                  <div className="px-[18px] py-[14px] border-b border-border-s">
+                    <h2 className="text-[13px] font-semibold text-main">Penetração por Município</h2>
+                  </div>
+                  <div className="px-[18px] py-[12px] flex-1">
+                    <MapaCoropletico municipios={data.mapaMunicipios} height={540} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Painel direito: KPIs + Bar Chart */}
+              <div className="flex flex-col gap-4 lg:w-[390px]">
+
+                {/* KPI Cards — grid 2x2 */}
+                <div className="grid grid-cols-2 gap-3">
+                  <KpiCard
+                    title="Penetração Média PF"
+                    value={data.kpis.penetracaoMediaNacional?.toFixed(1) ?? '—'}
+                    unit="%"
+                    subtitle="Usuários Pix / População"
                   />
-                  <Bar dataKey="penetracaoMedia" radius={[0, 4, 4, 0]}>
-                    {data.penetracaoPorRegiao.map((entry) => (
-                      <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#64748b'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+                  <KpiCard
+                    title="Ticket Médio PF"
+                    value={data.kpis.ticketMedioPf != null
+                      ? `R$ ${data.kpis.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : '—'}
+                    subtitle="Valor médio por transação"
+                  />
+                  <KpiCard
+                    title="Razão PJ/PF"
+                    value={data.kpis.razaoPjPf?.toFixed(4) ?? '—'}
+                    subtitle="Transações PJ sobre PF"
+                  />
+                  <KpiCard
+                    title="Volume per Capita"
+                    value={data.kpis.vlPerCapitaPf != null
+                      ? `R$ ${data.kpis.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : '—'}
+                    subtitle="Total transacionado por habitante"
+                  />
+                </div>
 
+                {/* Bar Chart — ocupa o espaço restante */}
+                <div className="bg-white rounded-card border border-border flex-1">
+                  <div className="px-[18px] py-[14px] border-b border-border-s">
+                    <h2 className="text-[13px] font-semibold text-main">Penetração por Região</h2>
+                  </div>
+                  <div className="px-[18px] py-[12px]">
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart
+                        data={data.penetracaoPorRegiao}
+                        layout="vertical"
+                        margin={{ left: 60, right: 20 }}
+                      >
+                        <XAxis type="number" unit="%" tick={{ fontSize: 11 }} />
+                        <YAxis type="category" dataKey="regiao" tick={{ fontSize: 11 }} width={60} />
+                        <Tooltip
+                          formatter={(v) => [`${v}%`, 'Penetração']}
+                          contentStyle={TOOLTIP_STYLE.contentStyle}
+                          labelStyle={TOOLTIP_STYLE.labelStyle}
+                          itemStyle={TOOLTIP_STYLE.itemStyle}
+                          cursor={TOOLTIP_STYLE.cursor}
+                        />
+                        <Bar dataKey="penetracaoMedia" radius={[0, 4, 4, 0]}>
+                          {data.penetracaoPorRegiao.map((entry) => (
+                            <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#64748b'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Disparidade Regional */}
+            {dispData && (
+              <>
+                {/* IQR e Desvio Padrão */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-white rounded-card border border-border">
+                    <div className="px-[18px] py-[14px] border-b border-border-s">
+                      <h2 className="text-[13px] font-semibold text-main">Penetração Mediana por Região</h2>
+                      <p className="text-xs text-muted mt-0.5">Mediana, Q1 e Q3 da penetração PF</p>
+                    </div>
+                    <div className="px-[18px] py-[12px]">
+                      <ResponsiveContainer width="100%" height={220}>
+                        <BarChart data={dispData.distribuicaoIqr} margin={{ left: 0, right: 10 }}>
+                          <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
+                          <YAxis unit="%" tick={{ fontSize: 10 }} />
+                          <Tooltip
+                            formatter={(v, name) => [
+                              `${Number(v).toFixed(1)}%`,
+                              String(name),
+                            ]}
+                            contentStyle={TOOLTIP_STYLE.contentStyle}
+                            labelStyle={TOOLTIP_STYLE.labelStyle}
+                            itemStyle={TOOLTIP_STYLE.itemStyle}
+                            cursor={TOOLTIP_STYLE.cursor}
+                          />
+                          <Bar dataKey="q1" name="Q1" fill="#BFDBFE" radius={[2, 2, 0, 0]} />
+                          <Bar dataKey="mediana" name="Mediana" radius={[2, 2, 0, 0]}>
+                            {dispData.distribuicaoIqr.map((entry) => (
+                              <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#64748b'} />
+                            ))}
+                          </Bar>
+                          <Bar dataKey="q3" name="Q3" fill="#BFDBFE" opacity={0.5} radius={[2, 2, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-card border border-border">
+                    <div className="px-[18px] py-[14px] border-b border-border-s">
+                      <h2 className="text-[13px] font-semibold text-main">Variação Intra-regional</h2>
+                      <p className="text-xs text-muted mt-0.5">Desvio padrão da penetração dentro de cada região</p>
+                    </div>
+                    <div className="px-[18px] py-[12px]">
+                      <ResponsiveContainer width="100%" height={220}>
+                        <BarChart data={dispData.distribuicaoIqr} margin={{ left: 0, right: 10 }}>
+                          <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
+                          <YAxis unit="pp" tick={{ fontSize: 10 }} />
+                          <Tooltip
+                            formatter={(v) => [`${Number(v).toFixed(1)} pp`, 'Desvio Padrão']}
+                            contentStyle={TOOLTIP_STYLE.contentStyle}
+                            labelStyle={TOOLTIP_STYLE.labelStyle}
+                            itemStyle={TOOLTIP_STYLE.itemStyle}
+                            cursor={TOOLTIP_STYLE.cursor}
+                          />
+                          <Bar dataKey="stddev" name="Desvio Padrão" radius={[4, 4, 0, 0]}>
+                            {dispData.distribuicaoIqr.map((entry) => (
+                              <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#64748b'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rankings */}
+                <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
+                  <RankingMunicipiosCard top10={dispData.top10} bottom10={dispData.bottom10} />
+                  <MunicipiosAtipicosCard items={dispData.municipiosAtipicos ?? []} />
+                </div>
+              </>
+            )}
+            
+          </div>
         </div>
-      </div>
-
-      {/* Disparidade Regional */}
-      {dispData && (
-        <>
-          {/* IQR e Desvio Padrão */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-card border border-border">
-              <div className="px-[18px] py-[14px] border-b border-border-s">
-                <h2 className="text-[13px] font-semibold text-main">Penetração Mediana por Região</h2>
-                <p className="text-xs text-muted mt-0.5">Mediana, Q1 e Q3 da penetração PF</p>
-              </div>
-              <div className="px-[18px] py-[12px]">
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={dispData.distribuicaoIqr} margin={{ left: 0, right: 10 }}>
-                    <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
-                    <YAxis unit="%" tick={{ fontSize: 10 }} />
-                    <Tooltip
-                      formatter={(v, name) => [
-                        `${Number(v).toFixed(1)}%`,
-                        String(name),
-                      ]}
-                      contentStyle={TOOLTIP_STYLE.contentStyle}
-                      labelStyle={TOOLTIP_STYLE.labelStyle}
-                      itemStyle={TOOLTIP_STYLE.itemStyle}
-                      cursor={TOOLTIP_STYLE.cursor}
-                    />
-                    <Bar dataKey="q1" name="Q1" fill="#BFDBFE" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="mediana" name="Mediana" radius={[2, 2, 0, 0]}>
-                      {dispData.distribuicaoIqr.map((entry) => (
-                        <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#64748b'} />
-                      ))}
-                    </Bar>
-                    <Bar dataKey="q3" name="Q3" fill="#BFDBFE" opacity={0.5} radius={[2, 2, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-card border border-border">
-              <div className="px-[18px] py-[14px] border-b border-border-s">
-                <h2 className="text-[13px] font-semibold text-main">Variação Intra-regional</h2>
-                <p className="text-xs text-muted mt-0.5">Desvio padrão da penetração dentro de cada região</p>
-              </div>
-              <div className="px-[18px] py-[12px]">
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={dispData.distribuicaoIqr} margin={{ left: 0, right: 10 }}>
-                    <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
-                    <YAxis unit="pp" tick={{ fontSize: 10 }} />
-                    <Tooltip
-                      formatter={(v) => [`${Number(v).toFixed(1)} pp`, 'Desvio Padrão']}
-                      contentStyle={TOOLTIP_STYLE.contentStyle}
-                      labelStyle={TOOLTIP_STYLE.labelStyle}
-                      itemStyle={TOOLTIP_STYLE.itemStyle}
-                      cursor={TOOLTIP_STYLE.cursor}
-                    />
-                    <Bar dataKey="stddev" name="Desvio Padrão" radius={[4, 4, 0, 0]}>
-                      {dispData.distribuicaoIqr.map((entry) => (
-                        <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#64748b'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          {/* Rankings */}
-          <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
-            <RankingMunicipiosCard top10={dispData.top10} bottom10={dispData.bottom10} />
-            <MunicipiosAtipicosCard items={dispData.municipiosAtipicos ?? []} />
-          </div>
-        </>
-      )}
+      ) : null}
     </div>
   );
 }

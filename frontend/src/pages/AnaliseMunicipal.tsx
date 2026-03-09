@@ -51,8 +51,8 @@ export function AnaliseMunicipal() {
         </div>
       </div>
 
-      {/* Estado vazio */}
-      {!municipioSelecionado && (
+      {/* Estado vazio (só aparece se realmente não tiver nada selecionado e não estiver carregando a lista inicial) */}
+      {!municipioSelecionado && !loadingLista && (
         <div className="flex flex-col items-center justify-center py-24 text-muted">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-[#cbd5e1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
@@ -62,102 +62,118 @@ export function AnaliseMunicipal() {
         </div>
       )}
 
-      {/* Loading e erro */}
-      {municipioSelecionado && loading && <LoadingState />}
-      {municipioSelecionado && error && <ErrorState message={error.message} />}
+      {/* Tratamento de Erro, Loading Inicial ou Dados */}
+      {error ? (
+        <ErrorState message={error.message} />
+      ) : municipioSelecionado && !data && loading ? (
+        // Estado de Loading APENAS no primeiro carregamento
+        <div className="flex justify-center items-center min-h-[400px]">
+          <LoadingState />
+        </div>
+      ) : municipioSelecionado && data ? (
+        // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading
+        <div className="relative">
+          
+          {/* Overlay de Loading transparente sobre a tela antiga */}
+          {loading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/40 backdrop-blur-[1px]">
+              <LoadingState />
+            </div>
+          )}
 
-      {/* Conteúdo do município */}
-      {municipioSelecionado && data && !loading && (
-        <>
-          {/* Cabeçalho do município */}
-          <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-xl font-bold text-main">{data.municipioNome}</h2>
-            <RegionBadge regiao={data.regiao} siglaRegiao={data.siglaRegiao} />
-            <span className="text-sm text-secondary">— {data.estado}</span>
-          </div>
+          {/* O container ganha opacity-50 e perde o clique enquanto carrega */}
+          <div className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            
+            {/* Cabeçalho do município */}
+            <div className="flex items-center gap-3 mb-6">
+              <h2 className="text-xl font-bold text-main">{data.municipioNome}</h2>
+              <RegionBadge regiao={data.regiao} siglaRegiao={data.siglaRegiao} />
+              <span className="text-sm text-secondary">— {data.estado}</span>
+            </div>
 
-          {/* Hero: Mapa (esquerda) + KPIs (direita) */}
-          <div className="flex flex-col lg:flex-row gap-6 mb-6">
+            {/* Hero: Mapa (esquerda) + KPIs (direita) */}
+            <div className="flex flex-col lg:flex-row gap-6 mb-6">
 
-            {/* Mapa do município */}
-            <div className="flex-1">
-              <div className="bg-white rounded-card border border-border">
-                <div className="px-[18px] py-[14px] border-b border-border-s">
-                  <h3 className="text-[13px] font-semibold text-main">Território Municipal</h3>
+              {/* Mapa do município */}
+              <div className="flex-1">
+                <div className="bg-white rounded-card border border-border h-full flex flex-col">
+                  <div className="px-[18px] py-[14px] border-b border-border-s">
+                    <h3 className="text-[13px] font-semibold text-main">Território Municipal</h3>
+                  </div>
+                  <div className="px-[18px] py-[12px] flex-1">
+                    <MapaCoropletico
+                      municipios={mapaMunicipios}
+                      height={440}
+                      useAbsoluteScale={true}
+                      showTileLayer={true}
+                    />
+                  </div>
                 </div>
-                <div className="px-[18px] py-[12px]">
-                  <MapaCoropletico
-                    municipios={mapaMunicipios}
-                    height={440}
-                    useAbsoluteScale={true}
-                    showTileLayer={true}
+              </div>
+
+              {/* KPIs */}
+              <div className="flex flex-col gap-4 lg:w-[390px]">
+                <div className="grid grid-cols-2 gap-3">
+                  <KpiCard
+                    title="Penetração PF"
+                    value={data.penetracaoPf?.toFixed(1) ?? '—'}
+                    unit="%"
+                    subtitle="Usuários Pix / População"
+                  />
+                  <KpiCard
+                    title="Ticket Médio PF"
+                    value={data.ticketMedioPf != null
+                      ? `R$ ${data.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : '—'}
+                    subtitle="Valor médio por transação"
+                  />
+                  <KpiCard
+                    title="Razão PJ/PF"
+                    value={data.razaoPjPf?.toFixed(4) ?? '—'}
+                    subtitle="Transações PJ sobre PF"
+                  />
+                  <KpiCard
+                    title="Volume per Capita"
+                    value={data.vlPerCapitaPf != null
+                      ? `R$ ${data.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : '—'}
+                    subtitle="Total transacionado por habitante"
                   />
                 </div>
               </div>
             </div>
 
-            {/* KPIs */}
-            <div className="flex flex-col gap-4 lg:w-[390px]">
-              <div className="grid grid-cols-2 gap-3">
-                <KpiCard
-                  title="Penetração PF"
-                  value={data.penetracaoPf?.toFixed(1) ?? '—'}
-                  unit="%"
-                  subtitle="Usuários Pix / População"
-                />
-                <KpiCard
-                  title="Ticket Médio PF"
-                  value={data.ticketMedioPf != null
-                    ? `R$ ${data.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                    : '—'}
-                  subtitle="Valor médio por transação"
-                />
-                <KpiCard
-                  title="Razão PJ/PF"
-                  value={data.razaoPjPf?.toFixed(4) ?? '—'}
-                  subtitle="Transações PJ sobre PF"
-                />
-                <KpiCard
-                  title="Volume per Capita"
-                  value={data.vlPerCapitaPf != null
-                    ? `R$ ${data.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                    : '—'}
-                  subtitle="Total transacionado por habitante"
-                />
+            {/* Indicadores Socioeconômicos */}
+            <div className="bg-white rounded-card border border-border">
+              <div className="px-[18px] py-[14px] border-b border-border-s">
+                <h3 className="text-[13px] font-semibold text-main">Indicadores Socioeconômicos</h3>
+              </div>
+              <div className="px-[18px] py-[12px]">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <KpiCard
+                    title="PIB per Capita"
+                    value={data.pibPerCapita != null
+                      ? `R$ ${data.pibPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : '—'}
+                    subtitle="Produto Interno Bruto por habitante"
+                  />
+                  <KpiCard
+                    title="IDHM"
+                    value={data.idhm?.toFixed(4) ?? '—'}
+                    subtitle="Índice de Desenvolvimento Humano Municipal"
+                  />
+                  <KpiCard
+                    title="Taxa de Urbanização"
+                    value={data.taxaUrbanizacao?.toFixed(1) ?? '—'}
+                    unit="%"
+                    subtitle="Proporção da população urbana"
+                  />
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Indicadores Socioeconômicos */}
-          <div className="bg-white rounded-card border border-border">
-            <div className="px-[18px] py-[14px] border-b border-border-s">
-              <h3 className="text-[13px] font-semibold text-main">Indicadores Socioeconômicos</h3>
-            </div>
-            <div className="px-[18px] py-[12px]">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <KpiCard
-                  title="PIB per Capita"
-                  value={data.pibPerCapita != null
-                    ? `R$ ${data.pibPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                    : '—'}
-                  subtitle="Produto Interno Bruto por habitante"
-                />
-                <KpiCard
-                  title="IDHM"
-                  value={data.idhm?.toFixed(4) ?? '—'}
-                  subtitle="Índice de Desenvolvimento Humano Municipal"
-                />
-                <KpiCard
-                  title="Taxa de Urbanização"
-                  value={data.taxaUrbanizacao?.toFixed(1) ?? '—'}
-                  unit="%"
-                  subtitle="Proporção da população urbana"
-                />
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+        </div>
+      ) : null}
     </div>
   );
 }
