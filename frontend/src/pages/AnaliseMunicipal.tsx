@@ -6,6 +6,7 @@ import { KpiCard } from '../components/KpiCard';
 import { RegionBadge } from '../components/RegionBadge';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
+import { AnaliseMunicipalSkeleton } from '../components/Skeleton';
 import type { MunicipioListItem } from '../types/dashboard';
 
 export function AnaliseMunicipal() {
@@ -66,10 +67,7 @@ export function AnaliseMunicipal() {
       {error ? (
         <ErrorState message={error.message} />
       ) : municipioSelecionado && !data && loading ? (
-        // Estado de Loading APENAS no primeiro carregamento
-        <div className="flex justify-center items-center min-h-[400px]">
-          <LoadingState />
-        </div>
+        <AnaliseMunicipalSkeleton />
       ) : municipioSelecionado && data ? (
         // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading
         <div className="relative">

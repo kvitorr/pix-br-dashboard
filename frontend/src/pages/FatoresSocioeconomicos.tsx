@@ -6,6 +6,7 @@ import {
 import { useFatoresSocioeconomicos } from '../hooks/useFatoresSocioeconomicos';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
+import { FatoresSocioeconomicosSkeleton } from '../components/Skeleton';
 import { REGION_COLORS, REGIONS, TOOLTIP_STYLE } from '../constants/colors';
 import type { CorrelacaoSpearman, ScatterMunicipio } from '../types/dashboard';
 
@@ -412,10 +413,7 @@ export function FatoresSocioeconomicos() {
       {error ? (
         <ErrorState message={error.message} />
       ) : !data && loading ? (
-        // Estado de Loading APENAS no primeiro carregamento (quando ainda não há data)
-        <div className="flex justify-center items-center min-h-[400px]">
-          <LoadingState />
-        </div>
+        <FatoresSocioeconomicosSkeleton />
       ) : data ? (
         // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading se estiver buscando novidades
         <div className="relative">
