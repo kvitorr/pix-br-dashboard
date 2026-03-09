@@ -39,18 +39,6 @@ public interface DashboardApi {
     );
 
     @Operation(
-            summary = "Fatores Socioeconômicos",
-            description = "Retorna dados para scatter plots de correlação entre penetração Pix e indicadores socioeconômicos.",
-            responses = @ApiResponse(responseCode = "200", description = "Dados retornados com sucesso")
-    )
-    ResponseEntity<FatoresSocioeconomicosResponse> getFatoresSocioeconomicos(
-            @Parameter(description = "Filtro por região")
-            @RequestParam(required = false) String regiao,
-            @Parameter(description = "Mês de referência no formato YYYY-MM. Padrão: mês mais recente.")
-            @RequestParam(required = false) String anoMes
-    );
-
-    @Operation(
             summary = "Evolução Temporal",
             description = "Retorna série temporal de penetração regional, crescimento acumulado e ticket médio nacional.",
             responses = @ApiResponse(responseCode = "200", description = "Dados retornados com sucesso")

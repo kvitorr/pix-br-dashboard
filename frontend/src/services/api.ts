@@ -1,7 +1,6 @@
 import type {
   VisaoGeralResponse,
   DisparidadeRegionalResponse,
-  FatoresSocioeconomicosResponse,
   EvolucaoTemporalResponse,
   MunicipioListItem,
   MunicipioDetalhes,
@@ -29,9 +28,6 @@ export const api = {
 
   disparidadeRegional: (regiao?: string | null, anoMes?: string | null) =>
     get<DisparidadeRegionalResponse>(buildUrl('/disparidade-regional', { regiao, anoMes })),
-
-  fatoresSocioeconomicos: (regiao?: string | null, anoMes?: string | null) =>
-    get<FatoresSocioeconomicosResponse>(buildUrl('/fatores-socioeconomicos', { regiao, anoMes })),
 
   evolucaoTemporal: (regiao?: string | null, dataInicio?: string | null, dataFim?: string | null) =>
     get<EvolucaoTemporalResponse>(buildUrl('/evolucao-temporal', { regiao, dataInicio, dataFim })),

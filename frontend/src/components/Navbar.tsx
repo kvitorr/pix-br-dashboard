@@ -14,19 +14,6 @@ const LINKS = [
     ),
   },
   {
-    to: '/fatores-socioeconomicos',
-    label: 'Fatores Socioeconômicos',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="7.5" cy="7.5" r="1.5" />
-        <circle cx="18.5" cy="5.5" r="1.5" />
-        <circle cx="11.5" cy="14.5" r="1.5" />
-        <circle cx="17.5" cy="17.5" r="1.5" />
-        <circle cx="5.5" cy="17.5" r="1.5" />
-      </svg>
-    ),
-  },
-  {
     to: '/evolucao-temporal',
     label: 'Evolução Temporal',
     icon: (

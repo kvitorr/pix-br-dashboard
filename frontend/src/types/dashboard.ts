@@ -58,21 +58,6 @@ export interface DisparidadeRegionalResponse {
   bottom10: MunicipioRanking[];
 }
 
-// --- Fatores Socioeconômicos ---
-export interface ScatterMunicipio {
-  municipioIbge: string;
-  municipio: string;
-  regiao: string;
-  pibPerCapita: number | null;
-  idhm: number | null;
-  taxaUrbanizacao: number | null;
-  penetracaoPf: number | null;
-}
-
-export interface FatoresSocioeconomicosResponse {
-  scatterData: ScatterMunicipio[];
-}
-
 // --- Análise Municipal ---
 export interface MunicipioListItem {
   municipioIbge: string;
