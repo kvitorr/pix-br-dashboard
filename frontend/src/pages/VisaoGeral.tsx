@@ -8,6 +8,7 @@ import { KpiCard } from '../components/KpiCard';
 import { FilterBar } from '../components/FilterBar';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
+import { VisaoGeralSkeleton } from '../components/Skeleton';
 import { MapaCoropletico } from '../components/MapaCoropletico';
 import { REGION_COLORS, TOOLTIP_STYLE } from '../constants/colors';
 import type { MunicipioAtipico, MunicipioRanking } from '../types/dashboard';
@@ -169,10 +170,7 @@ export function VisaoGeral() {
       {error ? (
         <ErrorState message={error.message} />
       ) : !data && loading ? (
-        // Estado de Loading APENAS no primeiro carregamento
-        <div className="flex justify-center items-center min-h-[400px]">
-          <LoadingState />
-        </div>
+        <VisaoGeralSkeleton />
       ) : data ? (
         // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading
         <div className="relative mt-6">
