@@ -4,7 +4,6 @@ import {
   Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { useFatoresSocioeconomicos } from '../hooks/useFatoresSocioeconomicos';
-import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { FatoresSocioeconomicosSkeleton } from '../components/Skeleton';
 import { REGION_COLORS, REGIONS, TOOLTIP_STYLE } from '../constants/colors';
@@ -412,20 +411,10 @@ export function FatoresSocioeconomicos() {
 
       {error ? (
         <ErrorState message={error.message} />
-      ) : !data && loading ? (
+      ) : loading ? (
         <FatoresSocioeconomicosSkeleton />
       ) : data ? (
-        // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading se estiver buscando novidades
-        <div className="relative">
-          {/* Overlay de Loading transparente sobre os gráficos antigos */}
-          {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/40 backdrop-blur-[1px]">
-              <LoadingState />
-            </div>
-          )}
-
-          {/* O container ganha opacity-50 e pointer-events-none (impede cliques) enquanto carrega */}
-          <div className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+        <div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
               {FATORES_CONFIG.map((fator) => {
                 const corr = data.correlacoes.find((c) => c.fator === fator.key);
@@ -455,7 +444,6 @@ export function FatoresSocioeconomicos() {
                 );
               })}
             </div>
-          </div>
         </div>
       ) : null}
     </div>

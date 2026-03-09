@@ -6,7 +6,6 @@ import { useVisaoGeral } from '../hooks/useVisaoGeral';
 import { useDisparidadeRegional } from '../hooks/useDisparidadeRegional';
 import { KpiCard } from '../components/KpiCard';
 import { FilterBar } from '../components/FilterBar';
-import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { VisaoGeralSkeleton } from '../components/Skeleton';
 import { MapaCoropletico } from '../components/MapaCoropletico';
@@ -169,21 +168,10 @@ export function VisaoGeral() {
       {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
         <ErrorState message={error.message} />
-      ) : !data && loading ? (
+      ) : loading ? (
         <VisaoGeralSkeleton />
       ) : data ? (
-        // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading
-        <div className="relative mt-6">
-          
-          {/* Overlay de Loading transparente sobre a tela antiga */}
-          {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/40 backdrop-blur-[1px]">
-              <LoadingState />
-            </div>
-          )}
-
-          {/* O container ganha opacity-50 e perde o clique enquanto carrega */}
-          <div className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+        <div className="mt-6">
             
             {/* Hero: Mapa (esquerda) + Painel direito (KPIs + Bar Chart) */}
             <div className="flex flex-col lg:flex-row gap-6 mb-6">
@@ -338,8 +326,7 @@ export function VisaoGeral() {
                 </div>
               </>
             )}
-            
-          </div>
+
         </div>
       ) : null}
     </div>
