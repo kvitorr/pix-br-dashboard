@@ -316,7 +316,7 @@ export function VisaoGeral() {
           </div>
 
           {/* Rankings */}
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
             <RankingMunicipiosCard top10={dispData.top10} bottom10={dispData.bottom10} />
             <MunicipiosAtipicosCard items={dispData.municipiosAtipicos ?? []} />
           </div>
