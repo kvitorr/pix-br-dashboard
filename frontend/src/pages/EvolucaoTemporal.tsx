@@ -9,6 +9,7 @@ import { ErrorState } from '../components/ErrorState';
 import { EvolucaoTemporalSkeleton } from '../components/Skeleton';
 import { KpiCard } from '../components/KpiCard';
 import { REGION_COLORS, REGIONS, TOOLTIP_STYLE } from '../constants/colors';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 
 function toYearMonth(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -24,6 +25,7 @@ export function EvolucaoTemporal() {
   const [dataFim, setDataFim] = useState<string | null>(() => toYearMonth(new Date()));
 
   const { data, loading, error } = useEvolucaoTemporal(regiao, dataInicio, dataFim);
+  const showSkeleton = useDelayedLoading(loading);
 
   // Normaliza nomes de região de MAIÚSCULAS (API) para title case (REGIONS/REGION_COLORS)
   const REGIAO_LABEL: Record<string, string> = {
@@ -92,7 +94,7 @@ export function EvolucaoTemporal() {
       {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
         <ErrorState message={error.message} />
-      ) : loading ? (
+      ) : showSkeleton ? (
         <EvolucaoTemporalSkeleton />
       ) : data ? (
         <div>

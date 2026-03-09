@@ -10,6 +10,7 @@ import { ErrorState } from '../components/ErrorState';
 import { VisaoGeralSkeleton } from '../components/Skeleton';
 import { MapaCoropletico } from '../components/MapaCoropletico';
 import { REGION_COLORS, TOOLTIP_STYLE } from '../constants/colors';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import type { MunicipioAtipico, MunicipioRanking } from '../types/dashboard';
 
 function RankingMunicipiosCard({ top10, bottom10 }: { top10: MunicipioRanking[]; bottom10: MunicipioRanking[] }) {
@@ -152,6 +153,7 @@ export function VisaoGeral() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
   const { data, loading, error } = useVisaoGeral(regiao, anoMes);
+  const showSkeleton = useDelayedLoading(loading);
   const { data: dispData } = useDisparidadeRegional(regiao, anoMes);
 
   return (
@@ -168,7 +170,7 @@ export function VisaoGeral() {
       {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
         <ErrorState message={error.message} />
-      ) : loading ? (
+      ) : showSkeleton ? (
         <VisaoGeralSkeleton />
       ) : data ? (
         <div className="mt-6">

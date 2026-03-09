@@ -6,6 +6,7 @@ import { KpiCard } from '../components/KpiCard';
 import { RegionBadge } from '../components/RegionBadge';
 import { ErrorState } from '../components/ErrorState';
 import { AnaliseMunicipalSkeleton } from '../components/Skeleton';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import type { MunicipioListItem } from '../types/dashboard';
 
 const DEFAULT_MUNICIPIO: MunicipioListItem = {
@@ -24,6 +25,7 @@ export function AnaliseMunicipal() {
   });
 
   const { data, loading, error } = useMunicipio(municipioSelecionado?.municipioIbge ?? null, anoMes);
+  const showSkeleton = useDelayedLoading(loading);
 
   const mapaMunicipios = data
     ? [{ municipioIbge: data.municipioIbge, municipioNome: data.municipioNome, penetracaoPf: data.penetracaoPf }]
@@ -53,7 +55,7 @@ export function AnaliseMunicipal() {
       {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
         <ErrorState message={error.message} />
-      ) : municipioSelecionado && loading ? (
+      ) : municipioSelecionado && showSkeleton ? (
         <AnaliseMunicipalSkeleton />
       ) : municipioSelecionado && data ? (
         <div>

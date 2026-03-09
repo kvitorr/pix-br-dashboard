@@ -6,6 +6,7 @@ import {
 import { useFatoresSocioeconomicos } from '../hooks/useFatoresSocioeconomicos';
 import { ErrorState } from '../components/ErrorState';
 import { FatoresSocioeconomicosSkeleton } from '../components/Skeleton';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import { REGION_COLORS, REGIONS, TOOLTIP_STYLE } from '../constants/colors';
 import type { CorrelacaoSpearman, ScatterMunicipio } from '../types/dashboard';
 
@@ -355,6 +356,7 @@ export function FatoresSocioeconomicos() {
   const [variavelY, setVariavelY] = useState<string>('penetracaoPf');
 
   const { data, loading, error } = useFatoresSocioeconomicos(regiao, anoMes, variavelY);
+  const showSkeleton = useDelayedLoading(loading);
 
   const yLabel =
     VARIAVEIS_Y.find((v) => v.value === variavelY)?.label ?? 'Penetração PF (%)';
@@ -411,7 +413,7 @@ export function FatoresSocioeconomicos() {
 
       {error ? (
         <ErrorState message={error.message} />
-      ) : loading ? (
+      ) : showSkeleton ? (
         <FatoresSocioeconomicosSkeleton />
       ) : data ? (
         <div>
