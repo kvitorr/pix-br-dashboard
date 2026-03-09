@@ -52,10 +52,23 @@ export interface MunicipioRanking {
   penetracaoPf: number | null;
 }
 
+export interface MunicipioAtipico {
+  municipioIbge: string;
+  municipio: string;
+  estado: string;
+  regiao: string;
+  siglaRegiao: string;
+  penetracaoPf: number | null;
+  pibPerCapita: number | null;
+  tipo: 'alta-adocao-baixo-pib' | 'baixa-adocao-alto-pib';
+  tags: string[];
+}
+
 export interface DisparidadeRegionalResponse {
   distribuicaoIqr: IqrRegiao[];
   top10: MunicipioRanking[];
   bottom10: MunicipioRanking[];
+  municipiosAtipicos: MunicipioAtipico[];
 }
 
 // --- Análise Municipal ---
