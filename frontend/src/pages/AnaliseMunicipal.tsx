@@ -4,7 +4,6 @@ import { MunicipioSearch } from '../components/MunicipioSearch';
 import { MapaCoropletico } from '../components/MapaCoropletico';
 import { KpiCard } from '../components/KpiCard';
 import { RegionBadge } from '../components/RegionBadge';
-import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { AnaliseMunicipalSkeleton } from '../components/Skeleton';
 import type { MunicipioListItem } from '../types/dashboard';
@@ -66,21 +65,10 @@ export function AnaliseMunicipal() {
       {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
         <ErrorState message={error.message} />
-      ) : municipioSelecionado && !data && loading ? (
+      ) : municipioSelecionado && loading ? (
         <AnaliseMunicipalSkeleton />
       ) : municipioSelecionado && data ? (
-        // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading
-        <div className="relative">
-          
-          {/* Overlay de Loading transparente sobre a tela antiga */}
-          {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/40 backdrop-blur-[1px]">
-              <LoadingState />
-            </div>
-          )}
-
-          {/* O container ganha opacity-50 e perde o clique enquanto carrega */}
-          <div className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+        <div>
             
             {/* Cabeçalho do município */}
             <div className="flex items-center gap-3 mb-6">
@@ -169,7 +157,6 @@ export function AnaliseMunicipal() {
                 </div>
               </div>
             </div>
-          </div>
         </div>
       ) : null}
     </div>

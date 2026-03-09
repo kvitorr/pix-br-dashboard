@@ -5,7 +5,6 @@ import {
 } from 'recharts';
 import { useEvolucaoTemporal } from '../hooks/useEvolucaoTemporal';
 import { FilterBar } from '../components/FilterBar';
-import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { EvolucaoTemporalSkeleton } from '../components/Skeleton';
 import { KpiCard } from '../components/KpiCard';
@@ -93,21 +92,10 @@ export function EvolucaoTemporal() {
       {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
         <ErrorState message={error.message} />
-      ) : !data && loading ? (
+      ) : loading ? (
         <EvolucaoTemporalSkeleton />
       ) : data ? (
-        // Se já existem dados, renderiza a tela normalmente, mas com overlay de loading
-        <div className="relative">
-          
-          {/* Overlay de Loading transparente sobre a tela antiga */}
-          {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/40 backdrop-blur-[1px]">
-              <LoadingState />
-            </div>
-          )}
-
-          {/* O container ganha opacity-50 e perde o clique enquanto carrega */}
-          <div className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+        <div>
             
             {/* KPIs */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -268,8 +256,7 @@ export function EvolucaoTemporal() {
                 </div>
               </div>
             </div>
-            
-          </div>
+
         </div>
       ) : null}
     </div>
