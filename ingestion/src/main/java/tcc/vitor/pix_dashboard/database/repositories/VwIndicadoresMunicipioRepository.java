@@ -130,6 +130,21 @@ public interface VwIndicadoresMunicipioRepository
     List<MunicipioListProjection> findAllMunicipios();
 
     @Query("""
+            SELECT v.id.municipioIbge AS municipioIbge,
+                   v.municipio        AS municipio,
+                   v.estado           AS estado,
+                   v.regiao           AS regiao,
+                   v.siglaRegiao      AS siglaRegiao
+            FROM VwIndicadoresMunicipio v
+            WHERE LOWER(v.municipio) LIKE LOWER(CONCAT('%', :nome, '%'))
+            GROUP BY v.id.municipioIbge, v.municipio, v.estado, v.regiao, v.siglaRegiao
+            ORDER BY v.municipio
+            """)
+    List<MunicipioListProjection> searchByName(
+            @Param("nome") String nome,
+            Pageable pageable);
+
+    @Query("""
             SELECT v FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes = :anoMes
               AND (:regiao IS NULL OR v.regiao = :regiao)

@@ -201,6 +201,15 @@ public class DashboardQueryRepository {
                 .toList();
     }
 
+    public List<MunicipioListItemDTO> searchMunicipios(String nome, int limit) {
+        return indicadoresRepo.searchByName(nome, PageRequest.of(0, limit)).stream()
+                .map(p -> new MunicipioListItemDTO(
+                        p.getMunicipioIbge(), p.getMunicipio(), p.getEstado(),
+                        p.getRegiao(), p.getSiglaRegiao()
+                ))
+                .toList();
+    }
+
     public Optional<MunicipioDetalhesDTO> findMunicipioDetalhes(String municipioIbge, LocalDate anoMes) {
         return indicadoresRepo.findMunicipioDetalhes(municipioIbge, anoMes)
                 .map(p -> new MunicipioDetalhesDTO(

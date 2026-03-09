@@ -49,6 +49,14 @@ public class DashboardController implements DashboardApi {
     }
 
     @Override
+    @GetMapping("/municipios/search")
+    public ResponseEntity<List<MunicipioListItemDTO>> searchMunicipios(
+            @RequestParam String nome,
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(dashboardService.searchMunicipios(nome, limit));
+    }
+
+    @Override
     @GetMapping("/municipio/{municipioIbge}")
     public ResponseEntity<MunicipioDetalhesDTO> getMunicipioDetalhes(
             @PathVariable String municipioIbge,

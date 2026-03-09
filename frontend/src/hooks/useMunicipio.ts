@@ -25,6 +25,28 @@ export function useMunicipio(ibge: string | null, anoMes: string | null) {
   return { data, loading, error };
 }
 
+export function useMunicipioSearch(query: string, limit = 10) {
+  const [results, setResults] = useState<MunicipioListItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (query.length < 2) {
+      setResults([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setLoading(true);
+      api.municipioSearch(query, limit)
+        .then(setResults)
+        .catch(() => setResults([]))
+        .finally(() => setLoading(false));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [query, limit]);
+
+  return { results, loading };
+}
+
 export function useMunicipioList() {
   const [municipios, setMunicipios] = useState<MunicipioListItem[]>([]);
   const [loading, setLoading] = useState(true);

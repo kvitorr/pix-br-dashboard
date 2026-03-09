@@ -36,6 +36,9 @@ export const api = {
   municipios: () =>
     get<MunicipioListItem[]>(buildUrl('/municipios', {})),
 
+  municipioSearch: (nome: string, limit = 10) =>
+    get<MunicipioListItem[]>(buildUrl('/municipios/search', { nome, limit: String(limit) })),
+
   municipio: (ibge: string, anoMes?: string | null) =>
     get<MunicipioDetalhes>(buildUrl(`/municipio/${ibge}`, { anoMes })),
 

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useMunicipio, useMunicipioList } from '../hooks/useMunicipio';
+import { useState } from 'react';
+import { useMunicipio } from '../hooks/useMunicipio';
 import { MunicipioSearch } from '../components/MunicipioSearch';
 import { MapaCoropletico } from '../components/MapaCoropletico';
 import { KpiCard } from '../components/KpiCard';
@@ -8,21 +8,22 @@ import { ErrorState } from '../components/ErrorState';
 import { AnaliseMunicipalSkeleton } from '../components/Skeleton';
 import type { MunicipioListItem } from '../types/dashboard';
 
+const DEFAULT_MUNICIPIO: MunicipioListItem = {
+  municipioIbge: '3550308',
+  municipioNome: 'São Paulo',
+  estado: 'SP',
+  regiao: 'Sudeste',
+  siglaRegiao: 'SE',
+};
+
 export function AnaliseMunicipal() {
-  const [municipioSelecionado, setMunicipioSelecionado] = useState<MunicipioListItem | null>(null);
+  const [municipioSelecionado, setMunicipioSelecionado] = useState<MunicipioListItem | null>(DEFAULT_MUNICIPIO);
   const [anoMes, setAnoMes] = useState<string | null>(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  const { municipios, loading: loadingLista } = useMunicipioList();
   const { data, loading, error } = useMunicipio(municipioSelecionado?.municipioIbge ?? null, anoMes);
-
-  useEffect(() => {
-    if (municipios.length > 0 && municipioSelecionado === null) {
-      setMunicipioSelecionado(municipios[Math.floor(Math.random() * municipios.length)]);
-    }
-  }, [municipios]);
 
   const mapaMunicipios = data
     ? [{ municipioIbge: data.municipioIbge, municipioNome: data.municipioNome, penetracaoPf: data.penetracaoPf }]
@@ -35,10 +36,8 @@ export function AnaliseMunicipal() {
       {/* Barra de filtros */}
       <div className="flex flex-wrap gap-4 mb-6 px-[16px] py-[10px] bg-white rounded-filter border border-border">
         <MunicipioSearch
-          municipios={municipios}
           selected={municipioSelecionado}
           onSelect={setMunicipioSelecionado}
-          loading={loadingLista}
         />
         <div className="flex items-center gap-2">
           <label className="text-[13px] font-medium text-main">Mês:</label>
@@ -51,17 +50,6 @@ export function AnaliseMunicipal() {
         </div>
       </div>
 
-      {/* Estado vazio (só aparece se realmente não tiver nada selecionado e não estiver carregando a lista inicial) */}
-      {!municipioSelecionado && !loadingLista && (
-        <div className="flex flex-col items-center justify-center py-24 text-muted">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-[#cbd5e1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-          </svg>
-          <p className="text-lg font-medium text-secondary">Busque um município pelo nome</p>
-          <p className="text-sm mt-1 text-muted">Digite ao menos 2 caracteres para ver sugestões</p>
-        </div>
-      )}
-
       {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
         <ErrorState message={error.message} />
@@ -69,7 +57,6 @@ export function AnaliseMunicipal() {
         <AnaliseMunicipalSkeleton />
       ) : municipioSelecionado && data ? (
         <div>
-            
             {/* Cabeçalho do município */}
             <div className="flex items-center gap-3 mb-6">
               <h2 className="text-xl font-bold text-main">{data.municipioNome}</h2>
@@ -157,6 +144,14 @@ export function AnaliseMunicipal() {
                 </div>
               </div>
             </div>
+        </div>
+      ) : !municipioSelecionado ? (
+        <div className="flex flex-col items-center justify-center py-24 text-muted">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-[#cbd5e1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <p className="text-lg font-medium text-secondary">Busque um município pelo nome</p>
+          <p className="text-sm mt-1 text-muted">Digite ao menos 2 caracteres para ver sugestões</p>
         </div>
       ) : null}
     </div>
