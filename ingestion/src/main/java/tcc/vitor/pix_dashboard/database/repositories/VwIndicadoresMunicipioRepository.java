@@ -130,6 +130,17 @@ public interface VwIndicadoresMunicipioRepository
     List<MunicipioListProjection> findAllMunicipios();
 
     @Query("""
+            SELECT v FROM VwIndicadoresMunicipio v
+            WHERE v.id.anoMes = :anoMes
+              AND (:regiao IS NULL OR v.regiao = :regiao)
+              AND v.penetracaoPf IS NOT NULL
+              AND v.pibPerCapita IS NOT NULL
+            """)
+    List<VwIndicadoresMunicipio> findAllWithPibAndPenetracao(
+            @Param("anoMes") LocalDate anoMes,
+            @Param("regiao") String regiao);
+
+    @Query("""
             SELECT v.id.municipioIbge AS municipioIbge,
                    v.municipio        AS municipio,
                    v.estado           AS estado,

@@ -47,7 +47,8 @@ public class DashboardService {
         return new DisparidadeRegionalResponse(
                 repository.findIqrPorRegiao(data, regiaoParam),
                 repository.findTop10(data, regiaoParam),
-                repository.findBottom10(data, regiaoParam)
+                repository.findBottom10(data, regiaoParam),
+                repository.findMunicipiosAtipicos(data, regiaoParam)
         );
     }
 

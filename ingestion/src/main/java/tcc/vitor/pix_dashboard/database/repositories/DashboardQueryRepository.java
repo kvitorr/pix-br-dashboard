@@ -1,11 +1,15 @@
 package tcc.vitor.pix_dashboard.database.repositories;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
+import tcc.vitor.pix_dashboard.database.models.VwIndicadoresMunicipio;
 import tcc.vitor.pix_dashboard.database.repositories.projections.*;
 import tcc.vitor.pix_dashboard.services.dto.dashboard.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,6 +110,60 @@ public class DashboardQueryRepository {
                 .stream()
                 .map(this::toRankingDTO)
                 .toList();
+    }
+
+    @Cacheable(
+            value = "municipiosAtipicos",
+            key = "#anoMes.toString() + '_' + (#regiao != null ? #regiao : 'ALL')",
+            condition = "#anoMes.isBefore(T(java.time.LocalDate).now().withDayOfMonth(1))"
+    )
+    public List<MunicipioAtipicoDTO> findMunicipiosAtipicos(LocalDate anoMes, String regiao) {
+        List<VwIndicadoresMunicipio> municipios = indicadoresRepo.findAllWithPibAndPenetracao(anoMes, regiao);
+        if (municipios.isEmpty()) return List.of();
+
+        List<Double> sortedPen = municipios.stream()
+                .map(VwIndicadoresMunicipio::getPenetracaoPf)
+                .sorted()
+                .toList();
+        List<Double> sortedPib = municipios.stream()
+                .map(VwIndicadoresMunicipio::getPibPerCapita)
+                .sorted()
+                .toList();
+
+        double medianaPen = percentileCont(sortedPen, 0.50);
+        double medianaPib = percentileCont(sortedPib, 0.50);
+
+        List<MunicipioAtipicoDTO> altaAdocaoBaixoPib = municipios.stream()
+                .filter(m -> m.getPenetracaoPf() > medianaPen && m.getPibPerCapita() < medianaPib)
+                .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
+                        (m.getPenetracaoPf() / medianaPen) - (m.getPibPerCapita() / medianaPib)).reversed())
+                .limit(5)
+                .map(m -> new MunicipioAtipicoDTO(
+                        m.getId().getMunicipioIbge(), m.getMunicipio(), m.getEstado(),
+                        m.getRegiao(), m.getSiglaRegiao(),
+                        round2(m.getPenetracaoPf()), round2(m.getPibPerCapita()),
+                        "alta-adocao-baixo-pib",
+                        List.of("PIB baixo", "Penetração acima da média")
+                ))
+                .toList();
+
+        List<MunicipioAtipicoDTO> baixaAdocaoAltoPib = municipios.stream()
+                .filter(m -> m.getPenetracaoPf() < medianaPen && m.getPibPerCapita() > medianaPib)
+                .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
+                        (m.getPibPerCapita() / medianaPib) - (m.getPenetracaoPf() / medianaPen)).reversed())
+                .limit(5)
+                .map(m -> new MunicipioAtipicoDTO(
+                        m.getId().getMunicipioIbge(), m.getMunicipio(), m.getEstado(),
+                        m.getRegiao(), m.getSiglaRegiao(),
+                        round2(m.getPenetracaoPf()), round2(m.getPibPerCapita()),
+                        "baixa-adocao-alto-pib",
+                        List.of("PIB alto", "Penetração abaixo do esperado")
+                ))
+                .toList();
+
+        List<MunicipioAtipicoDTO> result = new ArrayList<>(altaAdocaoBaixoPib);
+        result.addAll(baixaAdocaoAltoPib);
+        return result;
     }
 
     // =========================================================================
