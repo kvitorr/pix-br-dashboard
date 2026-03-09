@@ -184,7 +184,7 @@ export function VisaoGeral() {
                     <Tooltip
                       formatter={(v, name) => [
                         `${Number(v).toFixed(1)}%`,
-                        name === 'mediana' ? 'Mediana' : name === 'q1' ? 'Q1' : 'Q3',
+                        String(name),
                       ]}
                       contentStyle={TOOLTIP_STYLE.contentStyle}
                       labelStyle={TOOLTIP_STYLE.labelStyle}
