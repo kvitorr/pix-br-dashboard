@@ -109,19 +109,6 @@ public class DashboardQueryRepository {
     }
 
     // =========================================================================
-    // Fatores Socioeconômicos
-    // =========================================================================
-
-    public List<ScatterMunicipioDTO> findScatterData(LocalDate anoMes, String regiao) {
-        return indicadoresRepo.findScatterData(anoMes, regiao).stream()
-                .map(p -> new ScatterMunicipioDTO(
-                        p.getMunicipioIbge(), p.getMunicipio(), p.getRegiao(),
-                        p.getPibPerCapita(), p.getIdhm(), p.getTaxaUrbanizacao(), p.getPenetracaoPf()
-                ))
-                .toList();
-    }
-
-    // =========================================================================
     // Análise Municipal
     // =========================================================================
 

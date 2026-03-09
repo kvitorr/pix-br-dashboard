@@ -34,14 +34,6 @@ public class DashboardController implements DashboardApi {
     }
 
     @Override
-    @GetMapping("/fatores-socioeconomicos")
-    public ResponseEntity<FatoresSocioeconomicosResponse> getFatoresSocioeconomicos(
-            @RequestParam(required = false) String regiao,
-            @RequestParam(required = false) String anoMes) {
-        return ResponseEntity.ok(dashboardService.getFatoresSocioeconomicos(regiao, anoMes));
-    }
-
-    @Override
     @GetMapping("/evolucao-temporal")
     public ResponseEntity<EvolucaoTemporalResponse> getEvolucaoTemporal(
             @RequestParam(required = false) String regiao,

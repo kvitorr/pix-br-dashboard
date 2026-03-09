@@ -120,26 +120,6 @@ public interface VwIndicadoresMunicipioRepository
     @Query("""
             SELECT v.id.municipioIbge AS municipioIbge,
                    v.municipio        AS municipio,
-                   v.regiao           AS regiao,
-                   v.pibPerCapita     AS pibPerCapita,
-                   v.idhm             AS idhm,
-                   v.taxaUrbanizacao  AS taxaUrbanizacao,
-                   v.penetracaoPf     AS penetracaoPf
-            FROM VwIndicadoresMunicipio v
-            WHERE v.id.anoMes = :anoMes
-              AND (:regiao IS NULL OR v.regiao = :regiao)
-              AND v.pibPerCapita IS NOT NULL
-              AND v.idhm IS NOT NULL
-              AND v.taxaUrbanizacao IS NOT NULL
-              AND v.penetracaoPf IS NOT NULL
-            """)
-    List<ScatterMunicipioProjection> findScatterData(
-            @Param("anoMes") LocalDate anoMes,
-            @Param("regiao") String regiao);
-
-    @Query("""
-            SELECT v.id.municipioIbge AS municipioIbge,
-                   v.municipio        AS municipio,
                    v.estado           AS estado,
                    v.regiao           AS regiao,
                    v.siglaRegiao      AS siglaRegiao

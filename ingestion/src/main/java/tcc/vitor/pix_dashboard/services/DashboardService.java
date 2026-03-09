@@ -52,19 +52,7 @@ public class DashboardService {
     }
 
     // =========================================================================
-    // Página 3 — Fatores Socioeconômicos
-    // =========================================================================
-
-    public FatoresSocioeconomicosResponse getFatoresSocioeconomicos(String regiao, String anoMes) {
-        LocalDate data = resolveAnoMes(anoMes);
-        String regiaoParam = emptyToNull(regiao);
-        return new FatoresSocioeconomicosResponse(
-                repository.findScatterData(data, regiaoParam)
-        );
-    }
-
-    // =========================================================================
-    // Página 4 — Evolução Temporal
+    // Página 3 — Evolução Temporal
     // =========================================================================
 
     public EvolucaoTemporalResponse getEvolucaoTemporal(String regiao, String dataInicio, String dataFim) {
