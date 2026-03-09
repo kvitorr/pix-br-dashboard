@@ -46,6 +46,7 @@ class IidhmIngestionServiceTest {
     @BeforeEach
     void setUp() {
         sampleDto = new IidhmDTO(
+                2021,
                 "São Paulo",
                 new BigDecimal("0.783"),
                 new BigDecimal("0.845"),
@@ -63,40 +64,40 @@ class IidhmIngestionServiceTest {
 
     @Test
     void ingest_happyPath_parsesFileAndPersistsAndReturnsRun() throws IOException {
-        when(runManager.createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), anyString()))
+        when(runManager.createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), isNull()))
                 .thenReturn(runningRun);
         when(iidhmCsvParser.parse(any())).thenReturn(List.of(sampleDto));
-        when(idhmPersistenceService.persist(any(), eq(2021))).thenReturn(1);
+        when(idhmPersistenceService.persist(any())).thenReturn(1);
 
-        IngestionRun result = iidhmIngestionService.ingest(sampleFile, "2021");
+        IngestionRun result = iidhmIngestionService.ingest(sampleFile);
 
         assertThat(result).isEqualTo(runningRun);
-        verify(runManager).createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), anyString());
+        verify(runManager).createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), isNull());
         verify(iidhmCsvParser).parse(any());
-        verify(idhmPersistenceService).persist(List.of(sampleDto), 2021);
+        verify(idhmPersistenceService).persist(List.of(sampleDto));
         verify(runManager).markAsSuccess(runningRun, 1, 1);
         verify(runManager, never()).markAsFailed(any(), anyString(), anyString());
     }
 
     @Test
     void ingest_withEmptyFile_callsPersistWithEmptyListAndSucceeds() throws IOException {
-        when(runManager.createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), anyString()))
+        when(runManager.createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), isNull()))
                 .thenReturn(runningRun);
         when(iidhmCsvParser.parse(any())).thenReturn(List.of());
-        when(idhmPersistenceService.persist(any(), eq(2021))).thenReturn(0);
+        when(idhmPersistenceService.persist(any())).thenReturn(0);
 
-        iidhmIngestionService.ingest(sampleFile, "2021");
+        iidhmIngestionService.ingest(sampleFile);
 
         verify(runManager).markAsSuccess(runningRun, 0, 0);
     }
 
     @Test
     void ingest_whenParserThrowsIOException_marksRunAsFailedAndWraps() throws IOException {
-        when(runManager.createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), anyString()))
+        when(runManager.createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), isNull()))
                 .thenReturn(runningRun);
         when(iidhmCsvParser.parse(any())).thenThrow(new IOException("Arquivo corrompido"));
 
-        assertThatThrownBy(() -> iidhmIngestionService.ingest(sampleFile, "2021"))
+        assertThatThrownBy(() -> iidhmIngestionService.ingest(sampleFile))
                 .isInstanceOf(IngestionException.class)
                 .hasMessageContaining("Erro ao ler arquivo na ingestao de IDHM Atlas/PNUD");
 
@@ -106,13 +107,13 @@ class IidhmIngestionServiceTest {
 
     @Test
     void ingest_whenPersistenceThrowsUnexpectedException_marksRunAsFailedAndWraps() throws IOException {
-        when(runManager.createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), anyString()))
+        when(runManager.createRunningRecord(eq(IngestionRunSource.IDHM_ESTADUAL), isNull()))
                 .thenReturn(runningRun);
         when(iidhmCsvParser.parse(any())).thenReturn(List.of(sampleDto));
-        when(idhmPersistenceService.persist(any(), anyInt()))
+        when(idhmPersistenceService.persist(any()))
                 .thenThrow(new RuntimeException("DB connection lost"));
 
-        assertThatThrownBy(() -> iidhmIngestionService.ingest(sampleFile, "2021"))
+        assertThatThrownBy(() -> iidhmIngestionService.ingest(sampleFile))
                 .isInstanceOf(IngestionException.class)
                 .hasMessageContaining("Erro inesperado na ingestao de IDHM Atlas/PNUD");
 
