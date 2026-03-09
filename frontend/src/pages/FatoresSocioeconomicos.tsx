@@ -7,7 +7,7 @@ import { useFatoresSocioeconomicos } from '../hooks/useFatoresSocioeconomicos';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { REGION_COLORS, REGIONS, TOOLTIP_STYLE } from '../constants/colors';
-import type { CorrelacaoSpearman, MunicipioAtipico, MunicipioRanking, ScatterMunicipio } from '../types/dashboard';
+import type { CorrelacaoSpearman, ScatterMunicipio } from '../types/dashboard';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
@@ -23,13 +23,6 @@ const FATORES_CONFIG = [
   { key: 'idhm'            as const, label: 'IDHM',                xField: 'idhm'            as keyof ScatterMunicipio, icon: '🎓', xUnit: ''   },
   { key: 'taxaUrbanizacao' as const, label: 'Taxa de Urbanização',  xField: 'taxaUrbanizacao' as keyof ScatterMunicipio, icon: '🏙️', xUnit: '%'  },
 ] as const;
-
-const TAG_STYLES: Record<string, string> = {
-  'PIB baixo': 'bg-neg-bg text-neg',
-  'Penetração abaixo do esperado': 'bg-neg-bg text-neg',
-  'Penetração acima da média': 'bg-pos-bg text-pos',
-  'PIB alto': 'bg-mod-bg text-mod',
-};
 
 const INPUT_CLASS =
   'border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent';
@@ -207,6 +200,18 @@ function ScatterPlotCard({
 
   const trendLine = useMemo(() => calcTrendLine(allPoints), [allPoints]);
 
+  const xDomain = useMemo<[number, number]>(() => {
+    if (allPoints.length === 0) return [0, 1];
+    const xs = allPoints.map((p) => p.x);
+    return [Math.min(...xs), Math.max(...xs)];
+  }, [allPoints]);
+
+  const yDomain = useMemo<[number, number]>(() => {
+    if (allPoints.length === 0) return [0, 1];
+    const ys = allPoints.map((p) => p.y);
+    return [Math.min(...ys), Math.max(...ys)];
+  }, [allPoints]);
+
   const byRegion = useMemo(() => {
     const map: Record<string, ScatterPoint[]> = {};
     REGIONS.forEach((r) => (map[r] = []));
@@ -236,7 +241,7 @@ function ScatterPlotCard({
             <XAxis
               dataKey="x"
               type="number"
-              domain={['auto', 'auto']}
+              domain={xDomain}
               tickFormatter={(v) => formatXTick(v, fator.xUnit)}
               tick={{ fontSize: 10, fill: '#94a3b8' }}
               tickLine={false}
@@ -244,7 +249,7 @@ function ScatterPlotCard({
             <YAxis
               dataKey="y"
               type="number"
-              domain={['auto', 'auto']}
+              domain={yDomain}
               tickFormatter={(v) => `${v.toFixed(0)}${yUnit(yLabel)}`}
               tick={{ fontSize: 10, fill: '#94a3b8' }}
               tickLine={false}
@@ -305,151 +310,6 @@ function ScatterPlotCard({
             {r === 'Centro-Oeste' ? 'C-Oeste' : r}
           </span>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function RankingMunicipiosCard({
-  top10,
-  bottom10,
-}: {
-  top10: MunicipioRanking[];
-  bottom10: MunicipioRanking[];
-}) {
-  const [active, setActive] = useState<'top10' | 'bottom10'>('top10');
-  const items = active === 'top10' ? top10 : bottom10;
-  const isTop = active === 'top10';
-
-  return (
-    <div className="bg-white rounded-card border border-border flex-1">
-      <div className="px-[18px] py-[14px] border-b border-border-s flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-[13px] font-semibold text-main">Ranking de Municípios</h2>
-          <p className="text-xs text-muted mt-0.5">Por penetração PF · filtro por variável</p>
-        </div>
-        <div className="flex gap-1.5 shrink-0">
-          <button
-            onClick={() => setActive('top10')}
-            className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
-              isTop
-                ? 'bg-pos-bg text-pos border-pos/30'
-                : 'bg-subtle text-secondary border-border hover:text-main'
-            }`}
-          >
-            ▲ Top 10
-          </button>
-          <button
-            onClick={() => setActive('bottom10')}
-            className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
-              !isTop
-                ? 'bg-neg-bg text-neg border-neg/30'
-                : 'bg-subtle text-secondary border-border hover:text-main'
-            }`}
-          >
-            ▼ Bottom 10
-          </button>
-        </div>
-      </div>
-      <div className="px-[18px] py-[12px]">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left border-b border-border-s">
-              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">#</th>
-              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">Município</th>
-              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">Estado</th>
-              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted text-right">Penetração</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((m, i) => (
-              <tr key={m.municipioIbge} className="border-b border-border-s last:border-0">
-                <td className="py-2 text-muted font-mono text-[12px] w-6">{i + 1}</td>
-                <td className="py-2 pr-2">
-                  <span className="font-medium text-main text-[13px]">{m.municipio}</span>
-                  <div className={`mt-1 h-1 rounded-full ${isTop ? 'bg-pos-bg' : 'bg-accent-bg'}`}>
-                    <div
-                      className={`h-1 rounded-full ${isTop ? 'bg-pos' : 'bg-accent'}`}
-                      style={{ width: `${Math.min(100, m.penetracaoPf ?? 0)}%` }}
-                    />
-                  </div>
-                </td>
-                <td className="py-2">
-                  <span className="inline-block bg-subtle border border-border rounded px-1.5 py-0.5 text-[11px] font-medium text-secondary">
-                    {m.estado}
-                  </span>
-                </td>
-                <td className="py-2 text-right font-semibold text-[13px] text-main">
-                  {m.penetracaoPf?.toFixed(1) ?? '—'}%
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function MunicipiosAtipicosCard({ items }: { items: MunicipioAtipico[] }) {
-  return (
-    <div className="bg-white rounded-card border border-border flex-1">
-      <div className="px-[18px] py-[14px] border-b border-border-s flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-[13px] font-semibold text-main">Municípios Atípicos</h2>
-          <p className="text-xs text-muted mt-0.5">Alta adoção com baixo PIB · ou vice-versa</p>
-        </div>
-        <span className="shrink-0 text-[11px] text-muted bg-subtle border border-border rounded-badge px-2 py-1">
-          ⓘ Analiticamente relevantes para o TCC
-        </span>
-      </div>
-      <div className="px-[18px] py-[12px] flex flex-col gap-3">
-        {items.length === 0 && (
-          <p className="text-muted text-sm text-center py-4">Sem dados disponíveis</p>
-        )}
-        {items.map((m) => {
-          const isAlta = m.tipo === 'alta-adocao-baixo-pib';
-          return (
-            <div
-              key={m.municipioIbge}
-              className="flex items-start gap-3 py-2 border-b border-border-s last:border-0"
-            >
-              <div
-                className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${
-                  isAlta ? 'bg-orange-500' : 'bg-accent'
-                }`}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="font-semibold text-[13px] text-main">{m.municipio}</span>
-                  <span className="text-muted text-[11px]">
-                    {m.estado} · Região {m.regiao}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {m.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className={`text-[11px] font-medium px-2 py-0.5 rounded-badge ${
-                        TAG_STYLES[tag] ?? 'bg-subtle text-secondary'
-                      }`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div
-                className={`text-[15px] font-bold shrink-0 ${
-                  isAlta ? 'text-orange-500' : 'text-accent'
-                }`}
-              >
-                {m.penetracaoPf?.toFixed(0) ?? '—'}%
-                <div className="text-[10px] font-normal text-muted text-right">penetração PF</div>
-              </div>
-            </div>
-          );
-        })}
       </div>
     </div>
   );
@@ -557,11 +417,6 @@ export function FatoresSocioeconomicos() {
             })}
           </div>
 
-          {/* Ranking + Municípios Atípicos */}
-          <div className="flex flex-col lg:flex-row gap-4">
-            <RankingMunicipiosCard top10={data.top10} bottom10={data.bottom10} />
-            <MunicipiosAtipicosCard items={data.municipiosAtipicos} />
-          </div>
         </>
       )}
     </div>
