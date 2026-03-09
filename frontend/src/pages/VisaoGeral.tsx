@@ -59,7 +59,10 @@ function RankingTable({ title, items }: { title: string; items: MunicipioRanking
 
 export function VisaoGeral() {
   const [regiao, setRegiao] = useState<string | null>(null);
-  const [anoMes, setAnoMes] = useState<string | null>(null);
+  const [anoMes, setAnoMes] = useState<string | null>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
   const { data, loading, error } = useVisaoGeral(regiao, anoMes);
   const { data: dispData } = useDisparidadeRegional(regiao, anoMes);
 
