@@ -14,13 +14,15 @@ interface MapaCoropléticoProps {
   municipios: MapaMunicipio[];
   height?: number;
   useAbsoluteScale?: boolean;
+  showTileLayer?: boolean;
 }
 
-export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = false }: MapaCoropléticoProps) {
+export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = false, showTileLayer = false }: MapaCoropléticoProps) {
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<GeoJSONLayer | null>(null);
   const ufLayerRef = useRef<GeoJSONLayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const showTileLayerRef = useRef(showTileLayer);
   
   const [isLoading, setIsLoading] = useState(!geojsonCache);
   const [legendItems, setLegendItems] = useState<{color: string, label: string}[]>([]);
@@ -45,6 +47,14 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
         ufPane.style.pointerEvents = 'none'; // CRUCIAL: O mouse atravessa essa camada!
       }
       // -----------------------------------------------------------------------
+
+      if (showTileLayerRef.current) {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: 'abcd',
+          maxZoom: 19
+        }).addTo(map);
+      }
 
       mapRef.current = map;
     } catch (err) {
@@ -172,10 +182,11 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
         }).addTo(map);
 
         if (featuresFiltradas.length > 0 && layerRef.current) {
+          const fitMaxZoom = featuresFiltradas.length === 1 ? 11 : 8;
           map.fitBounds(layerRef.current.getBounds(), {
-             padding: [20, 20],
+             padding: [40, 40],
              animate: false,
-             maxZoom: 8
+             maxZoom: fitMaxZoom
           });
         }
 

@@ -78,6 +78,7 @@ export function AnaliseMunicipal() {
                   municipios={mapaMunicipios}
                   height={440}
                   useAbsoluteScale={true}
+                  showTileLayer={true}
                 />
               </div>
             </div>
