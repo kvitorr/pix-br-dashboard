@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMunicipio, useMunicipioList } from '../hooks/useMunicipio';
 import { MunicipioSearch } from '../components/MunicipioSearch';
 import { MapaCoropletico } from '../components/MapaCoropletico';
@@ -10,10 +10,19 @@ import type { MunicipioListItem } from '../types/dashboard';
 
 export function AnaliseMunicipal() {
   const [municipioSelecionado, setMunicipioSelecionado] = useState<MunicipioListItem | null>(null);
-  const [anoMes, setAnoMes] = useState<string | null>(null);
+  const [anoMes, setAnoMes] = useState<string | null>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   const { municipios, loading: loadingLista } = useMunicipioList();
   const { data, loading, error } = useMunicipio(municipioSelecionado?.municipioIbge ?? null, anoMes);
+
+  useEffect(() => {
+    if (municipios.length > 0 && municipioSelecionado === null) {
+      setMunicipioSelecionado(municipios[Math.floor(Math.random() * municipios.length)]);
+    }
+  }, [municipios]);
 
   const mapaMunicipios = data
     ? [{ municipioIbge: data.municipioIbge, municipioNome: data.municipioNome, penetracaoPf: data.penetracaoPf }]
