@@ -129,3 +129,34 @@ export interface EvolucaoTemporalResponse {
   crescimentoAcumulado: CrescimentoAcumulado[];
   ticketNacionalEvolucao: TicketNacional[];
 }
+
+// --- Fatores Socioeconômicos ---
+export interface ScatterMunicipio {
+  municipioIbge: string;
+  municipio: string;
+  estado: string;
+  regiao: string;
+  pibPerCapita: number | null;
+  idhm: number | null;
+  taxaUrbanizacao: number | null;
+  penetracaoPf: number | null;
+  ticketMedioPf: number | null;
+  razaoPjPf: number | null;
+  vlPerCapitaPf: number | null;
+}
+
+export interface CorrelacaoSpearman {
+  fator: 'pibPerCapita' | 'idhm' | 'taxaUrbanizacao';
+  rho: number;
+  pValor: number;
+  n: number;
+  forca: 'Forte' | 'Moderada' | 'Fraca';
+}
+
+export interface FatoresSocioeconomicosResponse {
+  scatterData: ScatterMunicipio[];
+  correlacoes: CorrelacaoSpearman[];
+  top10: MunicipioRanking[];
+  bottom10: MunicipioRanking[];
+  municipiosAtipicos: MunicipioAtipico[];
+}

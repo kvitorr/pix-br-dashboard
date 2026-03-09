@@ -3,6 +3,7 @@ import { Sidebar } from './components/Navbar';
 import { VisaoGeral } from './pages/VisaoGeral';
 import { EvolucaoTemporal } from './pages/EvolucaoTemporal';
 import { AnaliseMunicipal } from './pages/AnaliseMunicipal';
+import { FatoresSocioeconomicos } from './pages/FatoresSocioeconomicos';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
             <Route path="/visao-geral" element={<VisaoGeral />} />
             <Route path="/evolucao-temporal" element={<EvolucaoTemporal />} />
             <Route path="/analise-municipal" element={<AnaliseMunicipal />} />
+            <Route path="/fatores-socioeconomicos" element={<FatoresSocioeconomicos />} />
           </Routes>
         </main>
       </div>

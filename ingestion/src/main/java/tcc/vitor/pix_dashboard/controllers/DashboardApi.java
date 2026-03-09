@@ -73,4 +73,19 @@ public interface DashboardApi {
             @Parameter(description = "Mês de referência no formato YYYY-MM. Padrão: mês mais recente.")
             @RequestParam(required = false) String anoMes
     );
+
+    @Operation(
+            summary = "Fatores Socioeconômicos",
+            description = "Retorna dados de scatter plot (PIB, IDHM, Urbanização vs métrica Pix), " +
+                    "correlações de Spearman calculadas dinamicamente, ranking e municípios atípicos.",
+            responses = @ApiResponse(responseCode = "200", description = "Dados retornados com sucesso")
+    )
+    ResponseEntity<FatoresSocioeconomicosResponse> getFatoresSocioeconomicos(
+            @Parameter(description = "Filtro por região")
+            @RequestParam(required = false) String regiao,
+            @Parameter(description = "Mês de referência no formato YYYY-MM. Padrão: mês mais recente.")
+            @RequestParam(required = false) String anoMes,
+            @Parameter(description = "Variável Y do scatter. Valores: penetracaoPf, ticketMedioPf, razaoPjPf, vlPerCapitaPf. Padrão: penetracaoPf.")
+            @RequestParam(required = false, defaultValue = "penetracaoPf") String variavelY
+    );
 }

@@ -1,5 +1,7 @@
 package tcc.vitor.pix_dashboard.services;
 
+import org.apache.commons.math3.distribution.TDistribution;
+import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -10,6 +12,7 @@ import tcc.vitor.pix_dashboard.services.dto.dashboard.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 public class DashboardService {
@@ -134,6 +137,85 @@ public class DashboardService {
                         "Município não encontrado: " + municipioIbge + " para " + data
                 ));
     }
+
+    // =========================================================================
+    // Página 5 — Fatores Socioeconômicos
+    // =========================================================================
+
+    public FatoresSocioeconomicosResponse getFatoresSocioeconomicos(
+            String regiao, String anoMes, String variavelY) {
+        LocalDate data = resolveAnoMes(anoMes);
+        String regiaoParam = emptyToNull(regiao);
+        String y = (variavelY == null || variavelY.isBlank()) ? "penetracaoPf" : variavelY;
+
+        List<ScatterMunicipioDTO> scatter = repository.findScatterData(data, regiaoParam);
+        List<CorrelacaoSpearmanDTO> correlacoes = calcCorrelacoes(scatter, y);
+        List<MunicipioRankingDTO> top10 = extractRanking(scatter, y, true);
+        List<MunicipioRankingDTO> bottom10 = extractRanking(scatter, y, false);
+        List<MunicipioAtipicoDTO> atipicos = repository.findMunicipiosAtipicos(data, regiaoParam);
+
+        return new FatoresSocioeconomicosResponse(scatter, correlacoes, top10, bottom10, atipicos);
+    }
+
+    private List<CorrelacaoSpearmanDTO> calcCorrelacoes(List<ScatterMunicipioDTO> data, String variavelY) {
+        return List.of("pibPerCapita", "idhm", "taxaUrbanizacao").stream()
+                .map(fator -> {
+                    List<double[]> pairs = data.stream()
+                            .filter(m -> getXValue(m, fator) != null && getYValue(m, variavelY) != null)
+                            .map(m -> new double[]{getXValue(m, fator), getYValue(m, variavelY)})
+                            .toList();
+
+                    if (pairs.size() < 3)
+                        return new CorrelacaoSpearmanDTO(fator, 0.0, 1.0, pairs.size(), "Fraca");
+
+                    double[] xArr = pairs.stream().mapToDouble(p -> p[0]).toArray();
+                    double[] yArr = pairs.stream().mapToDouble(p -> p[1]).toArray();
+                    int n = pairs.size();
+
+                    double rho = new SpearmansCorrelation().correlation(xArr, yArr);
+                    double t = rho * Math.sqrt((n - 2.0) / (1.0 - rho * rho));
+                    double pValor = 2.0 * (1.0 - new TDistribution(n - 2).cumulativeProbability(Math.abs(t)));
+
+                    String forca = Math.abs(rho) >= 0.5 ? "Forte"
+                            : Math.abs(rho) >= 0.3 ? "Moderada" : "Fraca";
+
+                    return new CorrelacaoSpearmanDTO(fator, roundD2(rho), roundD4(pValor), n, forca);
+                })
+                .toList();
+    }
+
+    private List<MunicipioRankingDTO> extractRanking(
+            List<ScatterMunicipioDTO> data, String variavelY, boolean top) {
+        Comparator<ScatterMunicipioDTO> cmp = Comparator.comparingDouble(
+                m -> m.penetracaoPf() != null ? m.penetracaoPf() : -999.0);
+        Stream<ScatterMunicipioDTO> filtered = data.stream()
+                .filter(m -> getYValue(m, variavelY) != null && m.penetracaoPf() != null);
+        Stream<ScatterMunicipioDTO> sorted = top ? filtered.sorted(cmp.reversed()) : filtered.sorted(cmp);
+        return sorted.limit(10)
+                .map(m -> new MunicipioRankingDTO(
+                        m.municipioIbge(), m.municipio(), m.estado(), m.regiao(), "", m.penetracaoPf()))
+                .toList();
+    }
+
+    private Double getXValue(ScatterMunicipioDTO m, String fator) {
+        return switch (fator) {
+            case "idhm" -> m.idhm();
+            case "taxaUrbanizacao" -> m.taxaUrbanizacao();
+            default -> m.pibPerCapita();
+        };
+    }
+
+    private Double getYValue(ScatterMunicipioDTO m, String y) {
+        return switch (y) {
+            case "ticketMedioPf" -> m.ticketMedioPf();
+            case "razaoPjPf" -> m.razaoPjPf();
+            case "vlPerCapitaPf" -> m.vlPerCapitaPf();
+            default -> m.penetracaoPf();
+        };
+    }
+
+    private double roundD2(double v) { return Math.round(v * 100.0) / 100.0; }
+    private double roundD4(double v) { return Math.round(v * 10000.0) / 10000.0; }
 
     // =========================================================================
     // Helpers privados
