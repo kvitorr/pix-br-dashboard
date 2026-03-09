@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { REGIONS } from '../constants/colors';
 
 interface FilterBarProps {
@@ -6,6 +7,7 @@ interface FilterBarProps {
   onRegiaoChange: (value: string | null) => void;
   onAnoMesChange: (value: string | null) => void;
   showDateRange?: false;
+  children?: ReactNode;
 }
 
 interface FilterBarDateRangeProps {
@@ -16,6 +18,7 @@ interface FilterBarDateRangeProps {
   onDataInicioChange: (value: string | null) => void;
   onDataFimChange: (value: string | null) => void;
   showDateRange: true;
+  children?: ReactNode;
 }
 
 type Props = FilterBarProps | FilterBarDateRangeProps;
@@ -73,6 +76,8 @@ export function FilterBar(props: Props) {
           </div>
         </>
       )}
+
+      {props.children}
     </div>
   );
 }

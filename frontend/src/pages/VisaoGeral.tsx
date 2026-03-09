@@ -176,26 +176,25 @@ export function VisaoGeral() {
     <div>
       <h1 className="text-[20px] font-bold text-main mb-4">Visão Geral Nacional</h1>
 
-      <div className="flex flex-wrap items-end gap-4 mb-6">
-        <FilterBar
-          regiao={regiao}
-          anoMes={anoMes}
-          onRegiaoChange={setRegiao}
-          onAnoMesChange={setAnoMes}
-        />
+      <FilterBar
+        regiao={regiao}
+        anoMes={anoMes}
+        onRegiaoChange={setRegiao}
+        onAnoMesChange={setAnoMes}
+      >
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-muted whitespace-nowrap">Métrica:</label>
+          <label className="text-[13px] font-medium text-main">Métrica:</label>
           <select
             value={metricaIdx}
             onChange={(e) => setMetricaIdx(Number(e.target.value))}
-            className="text-[13px] border border-border rounded-md px-2 py-1.5 bg-white text-main focus:outline-none focus:ring-1 focus:ring-blue-400"
+            className="border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
           >
             {VARIAVEIS_MAPA.map((v, i) => (
               <option key={v.value} value={i}>{v.label}</option>
             ))}
           </select>
         </div>
-      </div>
+      </FilterBar>
 
       {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
