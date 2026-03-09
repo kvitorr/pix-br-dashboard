@@ -134,6 +134,16 @@ public interface VwIndicadoresMunicipioRepository
             WHERE v.id.anoMes = :anoMes
               AND (:regiao IS NULL OR v.regiao = :regiao)
               AND v.penetracaoPf IS NOT NULL
+            """)
+    List<VwIndicadoresMunicipio> findAllForScatter(
+            @Param("anoMes") LocalDate anoMes,
+            @Param("regiao") String regiao);
+
+    @Query("""
+            SELECT v FROM VwIndicadoresMunicipio v
+            WHERE v.id.anoMes = :anoMes
+              AND (:regiao IS NULL OR v.regiao = :regiao)
+              AND v.penetracaoPf IS NOT NULL
               AND v.pibPerCapita IS NOT NULL
             """)
     List<VwIndicadoresMunicipio> findAllWithPibAndPenetracao(

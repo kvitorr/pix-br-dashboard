@@ -55,4 +55,13 @@ public class DashboardController implements DashboardApi {
             @RequestParam(required = false) String anoMes) {
         return ResponseEntity.ok(dashboardService.getMunicipioDetalhes(municipioIbge, anoMes));
     }
+
+    @Override
+    @GetMapping("/fatores-socioeconomicos")
+    public ResponseEntity<FatoresSocioeconomicosResponse> getFatoresSocioeconomicos(
+            @RequestParam(required = false) String regiao,
+            @RequestParam(required = false) String anoMes,
+            @RequestParam(required = false, defaultValue = "penetracaoPf") String variavelY) {
+        return ResponseEntity.ok(dashboardService.getFatoresSocioeconomicos(regiao, anoMes, variavelY));
+    }
 }

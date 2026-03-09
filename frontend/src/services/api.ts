@@ -4,6 +4,7 @@ import type {
   EvolucaoTemporalResponse,
   MunicipioListItem,
   MunicipioDetalhes,
+  FatoresSocioeconomicosResponse,
 } from '../types/dashboard';
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '/api/dashboard';
@@ -37,4 +38,13 @@ export const api = {
 
   municipio: (ibge: string, anoMes?: string | null) =>
     get<MunicipioDetalhes>(buildUrl(`/municipio/${ibge}`, { anoMes })),
+
+  fatoresSocioeconomicos: (
+    regiao?: string | null,
+    anoMes?: string | null,
+    variavelY?: string | null,
+  ) =>
+    get<FatoresSocioeconomicosResponse>(
+      buildUrl('/fatores-socioeconomicos', { regiao, anoMes, variavelY }),
+    ),
 };
