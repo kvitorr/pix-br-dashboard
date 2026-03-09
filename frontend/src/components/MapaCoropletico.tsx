@@ -10,20 +10,47 @@ import type { MapaMunicipio } from '../types/dashboard';
 let geojsonCache: GeoJSON.FeatureCollection | null = null;
 let ufCache: GeoJSON.FeatureCollection | null = null;
 
+export type MetricFormato = 'percent' | 'currency' | 'decimal';
+
 interface MapaCoropléticoProps {
   municipios: MapaMunicipio[];
+  metricKey?: keyof MapaMunicipio;
+  metricLabel?: string;
+  metricFormato?: MetricFormato;
   height?: number;
   useAbsoluteScale?: boolean;
   showTileLayer?: boolean;
 }
 
-export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = false, showTileLayer = false }: MapaCoropléticoProps) {
+function formatMetrica(val: number, formato: MetricFormato): string {
+  if (formato === 'percent') return `${val.toFixed(1)}%`;
+  if (formato === 'currency')
+    return `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return val.toFixed(4);
+}
+
+function formatLegendValue(val: number, formato: MetricFormato): string {
+  if (formato === 'percent') return `${val.toFixed(1)}%`;
+  if (formato === 'currency')
+    return `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return val.toFixed(4);
+}
+
+export function MapaCoropletico({
+  municipios,
+  metricKey = 'penetracaoPf',
+  metricLabel = 'Penetração',
+  metricFormato = 'percent',
+  height = 480,
+  useAbsoluteScale = false,
+  showTileLayer = false,
+}: MapaCoropléticoProps) {
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<GeoJSONLayer | null>(null);
   const ufLayerRef = useRef<GeoJSONLayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const showTileLayerRef = useRef(showTileLayer);
-  
+
   const [isLoading, setIsLoading] = useState(!geojsonCache);
   const [legendItems, setLegendItems] = useState<{color: string, label: string}[]>([]);
 
@@ -34,19 +61,16 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
     try {
       const map = L.map(containerRef.current, {
         zoomControl: true,
-        zoomSnap: 0.1, 
+        zoomSnap: 0.1,
         wheelPxPerZoomLevel: 120
       }).setView([-15.78, -47.93], 4.5);
 
-      // --- O PULO DO GATO SÊNIOR: CRIAR UM PANE PARA AS BORDAS DOS ESTADOS ---
-      // O Leaflet desenha as camadas no zIndex 400. Vamos colocar os Estados no 410.
       map.createPane('ufBorders');
       const ufPane = map.getPane('ufBorders');
       if (ufPane) {
-        ufPane.style.zIndex = '410'; 
-        ufPane.style.pointerEvents = 'none'; // CRUCIAL: O mouse atravessa essa camada!
+        ufPane.style.zIndex = '410';
+        ufPane.style.pointerEvents = 'none';
       }
-      // -----------------------------------------------------------------------
 
       if (showTileLayerRef.current) {
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -83,7 +107,7 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
 
       try {
         const values = municipios
-          .map((m) => m.penetracaoPf)
+          .map((m) => m[metricKey] as number | null)
           .filter((v): v is number => v != null)
           .sort((a, b) => a - b);
 
@@ -96,20 +120,20 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
         if (values.length > 0) {
           if (useAbsoluteScale) {
             setLegendItems([
-              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: '0% a 20%' },
-              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: '20% a 40%' },
-              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: '40% a 60%' },
-              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: '60% a 80%' },
-              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: '> 80%' },
+              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: formatLegendValue(0, metricFormato) + ' a ' + formatLegendValue(20, metricFormato) },
+              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: formatLegendValue(20, metricFormato) + ' a ' + formatLegendValue(40, metricFormato) },
+              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: formatLegendValue(40, metricFormato) + ' a ' + formatLegendValue(60, metricFormato) },
+              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: formatLegendValue(60, metricFormato) + ' a ' + formatLegendValue(80, metricFormato) },
+              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: '> ' + formatLegendValue(80, metricFormato) },
             ]);
           } else {
             const minVal = values[0] ?? 0;
             setLegendItems([
-              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: `${minVal.toFixed(1)}% a ${thresholds[0].toFixed(1)}%` },
-              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: `${thresholds[0].toFixed(1)}% a ${thresholds[1].toFixed(1)}%` },
-              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: `${thresholds[1].toFixed(1)}% a ${thresholds[2].toFixed(1)}%` },
-              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: `${thresholds[2].toFixed(1)}% a ${thresholds[3].toFixed(1)}%` },
-              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: `> ${thresholds[3].toFixed(1)}%` },
+              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: `${formatLegendValue(minVal, metricFormato)} a ${formatLegendValue(thresholds[0] ?? 0, metricFormato)}` },
+              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: `${formatLegendValue(thresholds[0] ?? 0, metricFormato)} a ${formatLegendValue(thresholds[1] ?? 0, metricFormato)}` },
+              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: `${formatLegendValue(thresholds[1] ?? 0, metricFormato)} a ${formatLegendValue(thresholds[2] ?? 0, metricFormato)}` },
+              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: `${formatLegendValue(thresholds[2] ?? 0, metricFormato)} a ${formatLegendValue(thresholds[3] ?? 0, metricFormato)}` },
+              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: `> ${formatLegendValue(thresholds[3] ?? 0, metricFormato)}` },
             ]);
           }
         }
@@ -128,39 +152,35 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
           style: (feat) => {
             const cod = feat?.properties?.codarea || feat?.properties?.CD_MUN;
             const municipioData = cod ? dadosMap.get(String(cod)) : undefined;
-            const val = municipioData?.penetracaoPf;
+            const val = municipioData?.[metricKey] as number | undefined;
 
             const idx = thresholds.filter((t) => (val ?? 0) > t).length;
             const fillColor = CHOROPLETH_SCALE[idx] ?? CHOROPLETH_SCALE[4];
 
-            return { fillColor, weight: 0.5, color: '#e2e8f0', fillOpacity: 1 }; 
+            return { fillColor, weight: 0.5, color: '#e2e8f0', fillOpacity: 1 };
           },
           onEachFeature: (feat, layer) => {
             const cod = feat?.properties?.codarea || feat?.properties?.CD_MUN;
             const municipioData = cod ? dadosMap.get(String(cod)) : undefined;
-            const nome = municipioData?.municipioNome || 'Sem Dados'; 
-            const val = municipioData?.penetracaoPf;
+            const nome = municipioData?.municipioNome || 'Sem Dados';
+            const val = municipioData?.[metricKey] as number | null | undefined;
 
-            layer.bindTooltip(`<b>${nome}</b><br/>${val != null ? val.toFixed(1) + '%' : '0.0%'}`, {
+            const valFormatado = val != null ? formatMetrica(val, metricFormato) : '—';
+            layer.bindTooltip(`<b>${nome}</b><br/>${valFormatado}`, {
               sticky: true,
               direction: 'auto',
               className: 'shadow-sm'
             });
 
-            // LÓGICA DE INTERATIVIDADE CORRIGIDA
             layer.on({
               mouseover: (e) => {
                 const target = e.target;
-                
                 target.setStyle({
                   weight: 2,
-                  color: '#1e293b', 
+                  color: '#1e293b',
                   fillOpacity: 1
                 });
-                
-                // Agora é 100% seguro trazer o município para frente, 
-                // pois as bordas dos Estados estão presas no Pane superior invisível!
-                target.bringToFront(); 
+                target.bringToFront();
               },
               mouseout: (e) => {
                 if (layerRef.current) {
@@ -172,7 +192,7 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
                 if (currentMap) {
                   currentMap.fitBounds(e.target.getBounds(), {
                     padding: [50, 50],
-                    maxZoom: 9, 
+                    maxZoom: 9,
                     animate: true
                   });
                 }
@@ -207,12 +227,12 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
           };
 
           ufLayerRef.current = L.geoJSON(ufsFiltradas, {
-            pane: 'ufBorders', // AQUI VINCULAMOS A CAMADA AO PANE QUE CRIAMOS!
+            pane: 'ufBorders',
             style: {
               fill: false,
               color: '#4755694d',
               weight: 1.5,
-              interactive: false // Reforça que o mouse não deve encostar aqui
+              interactive: false
             }
           }).addTo(map);
         };
@@ -226,7 +246,7 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
               if (!data || data.type !== 'Topology') return;
               const objectKey = Object.keys(data.objects)[0];
               if (!objectKey) return;
-              
+
               const ufGeojson = feature(data, data.objects[objectKey]) as unknown as GeoJSON.FeatureCollection;
               ufCache = ufGeojson;
               renderizarEstados(ufGeojson);
@@ -238,7 +258,7 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
 
       } catch (e) {
         console.error("Erro ao processar camada GeoJSON:", e);
-        setIsLoading(false); 
+        setIsLoading(false);
       }
     };
 
@@ -259,7 +279,7 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
              return;
           }
           const geojsonConverted = feature(data, data.objects[objectKey]) as unknown as GeoJSON.FeatureCollection;
-          
+
           geojsonCache = geojsonConverted;
           updateLayer(geojsonConverted);
         })
@@ -270,24 +290,24 @@ export function MapaCoropletico({ municipios, height = 480, useAbsoluteScale = f
     }
 
     return () => { isMounted = false; };
-  }, [municipios, useAbsoluteScale]);
+  }, [municipios, metricKey, metricFormato, useAbsoluteScale]);
 
   return (
-      <div className="relative rounded-xl overflow-hidden bg-slate-50" style={{ height: `${height}px`, width: '100%' }}>      
-      
+      <div className="relative rounded-xl overflow-hidden bg-slate-50" style={{ height: `${height}px`, width: '100%' }}>
+
       {/* Container do Mapa */}
       <div ref={containerRef} className="absolute inset-0 z-0" />
 
       {/* Legenda */}
       {!isLoading && legendItems.length > 0 && (
         <div className="absolute bottom-4 right-4 z-20 bg-white/90 backdrop-blur-sm p-3.5 rounded-lg shadow-md border border-slate-200 text-xs text-slate-700 pointer-events-none">
-          <h4 className="font-bold text-slate-800 mb-2.5 uppercase tracking-wide text-[10px]">Penetração</h4>
+          <h4 className="font-bold text-slate-800 mb-2.5 uppercase tracking-wide text-[10px]">{metricLabel}</h4>
           <div className="flex flex-col gap-2">
             {legendItems.map((item, idx) => (
               <div key={idx} className="flex items-center gap-2.5">
-                <span 
-                  className="w-4 h-4 rounded-sm shadow-sm border border-black/10" 
-                  style={{ backgroundColor: item.color }} 
+                <span
+                  className="w-4 h-4 rounded-sm shadow-sm border border-black/10"
+                  style={{ backgroundColor: item.color }}
                 />
                 <span className="font-medium">{item.label}</span>
               </div>
