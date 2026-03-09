@@ -20,13 +20,15 @@ interface FilterBarDateRangeProps {
 
 type Props = FilterBarProps | FilterBarDateRangeProps;
 
+const inputClass = 'border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent';
+
 export function FilterBar(props: Props) {
   return (
-    <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div className="flex flex-wrap gap-4 mb-6 px-[16px] py-[10px] bg-white rounded-filter border border-border">
       <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-gray-700">Região:</label>
+        <label className="text-[13px] font-medium text-main">Região:</label>
         <select
-          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={inputClass}
           value={props.regiao ?? ''}
           onChange={(e) => props.onRegiaoChange(e.target.value || null)}
         >
@@ -39,10 +41,10 @@ export function FilterBar(props: Props) {
 
       {!props.showDateRange && (
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">Mês:</label>
+          <label className="text-[13px] font-medium text-main">Mês:</label>
           <input
             type="month"
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={inputClass}
             value={(props as FilterBarProps).anoMes ?? ''}
             onChange={(e) => (props as FilterBarProps).onAnoMesChange(e.target.value || null)}
           />
@@ -52,19 +54,19 @@ export function FilterBar(props: Props) {
       {props.showDateRange && (
         <>
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">De:</label>
+            <label className="text-[13px] font-medium text-main">De:</label>
             <input
               type="month"
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               value={(props as FilterBarDateRangeProps).dataInicio ?? ''}
               onChange={(e) => (props as FilterBarDateRangeProps).onDataInicioChange(e.target.value || null)}
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Até:</label>
+            <label className="text-[13px] font-medium text-main">Até:</label>
             <input
               type="month"
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               value={(props as FilterBarDateRangeProps).dataFim ?? ''}
               onChange={(e) => (props as FilterBarDateRangeProps).onDataFimChange(e.target.value || null)}
             />

@@ -7,7 +7,7 @@ import { AnaliseMunicipal } from './pages/AnaliseMunicipal';
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-page">
         <Sidebar />
         <main className="flex-1 overflow-auto px-6 py-6">
           <Routes>

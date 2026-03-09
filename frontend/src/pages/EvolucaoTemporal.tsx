@@ -8,7 +8,7 @@ import { FilterBar } from '../components/FilterBar';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
 import { KpiCard } from '../components/KpiCard';
-import { REGION_COLORS, REGIONS } from '../constants/colors';
+import { REGION_COLORS, REGIONS, TOOLTIP_STYLE } from '../constants/colors';
 
 function toYearMonth(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -95,7 +95,7 @@ export function EvolucaoTemporal() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Evolução Temporal</h1>
+      <h1 className="text-[20px] font-bold text-main mb-4">Evolução Temporal</h1>
 
       <FilterBar
         regiao={regiao}
@@ -134,112 +134,136 @@ export function EvolucaoTemporal() {
       </div>
 
       {/* Linha temporal por região */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-        <h2 className="text-base font-semibold text-gray-700 mb-3">
-          Penetração Média Mensal por Região
-        </h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData} margin={{ top: 5, right: 90, bottom: 20, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis
-              dataKey="anoMes"
-              tick={{ fontSize: 9 }}
-              interval={Math.floor(chartData.length / 12)}
-              angle={-30}
-              textAnchor="end"
-            />
-            <YAxis
-              unit="%"
-              tick={{ fontSize: 10 }}
-              domain={[
-                (dataMin: number) => Math.floor(dataMin) - 1,
-                (dataMax: number) => Math.ceil(dataMax) + 1,
-              ]}
-            />
-            <Tooltip
-              labelFormatter={(label) => {
-                const suffix =
-                  hasPartialMonth && label === currentMonth
-                    ? ' (dados parciais)'
-                    : '';
-                return `${label}${suffix}`;
-              }}
-              formatter={(v) => [`${Number(v).toFixed(1)}%`]}
-            />
-            {hasPartialMonth && chartData.length >= 2 && (
-              <ReferenceArea
-                x1={String(chartData[chartData.length - 2].anoMes)}
-                x2={String(chartData[chartData.length - 1].anoMes)}
-                fill="#F9FAFB"
-                stroke="#E5E7EB"
-                strokeOpacity={0.5}
-                label={{ value: 'mês atual', position: 'insideTopLeft', fontSize: 9, fill: '#9CA3AF' }}
-              />
-            )}
-            {regioes.map((r) => (
-              <Line
-                key={r}
-                type="monotone"
-                dataKey={r}
-                stroke={REGION_COLORS[r]}
-                dot={false}
-                strokeWidth={2}
-                label={makeLabel(r)}
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Crescimento acumulado + Ticket médio */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <h2 className="text-base font-semibold text-gray-700 mb-3">Crescimento Acumulado por Região</h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={data.crescimentoAcumulado} margin={{ left: 10, right: 10 }}>
-              <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
-              <YAxis unit=" pp" tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v) => [`${Number(v).toFixed(1)} pp`, 'Variação']} />
-              <Bar dataKey="variacaoPp" name="Crescimento (pp)" radius={[4, 4, 0, 0]}>
-                {data.crescimentoAcumulado.map((entry) => (
-                  <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#6B7280'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+      <div className="bg-white rounded-card border border-border mb-6">
+        <div className="px-[18px] py-[14px] border-b border-border-s">
+          <h2 className="text-[13px] font-semibold text-main">Penetração Média Mensal por Região</h2>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <h2 className="text-base font-semibold text-gray-700 mb-3">Evolução do Ticket Médio Nacional</h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={ticketData} margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+        <div className="px-[18px] py-[12px]">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData} margin={{ top: 5, right: 90, bottom: 20, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis
                 dataKey="anoMes"
                 tick={{ fontSize: 9 }}
-                interval={Math.floor(ticketData.length / 8)}
+                interval={Math.floor(chartData.length / 12)}
                 angle={-30}
                 textAnchor="end"
               />
               <YAxis
+                unit="%"
                 tick={{ fontSize: 10 }}
-                tickFormatter={(v) => `R$ ${Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
-              />
-              <Tooltip
-                formatter={(v) => [
-                  `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-                  'Ticket Médio',
+                domain={[
+                  (dataMin: number) => Math.floor(dataMin) - 1,
+                  (dataMax: number) => Math.ceil(dataMax) + 1,
                 ]}
               />
-              <Line
-                type="monotone"
-                dataKey="ticket"
-                stroke="#3B82F6"
-                dot={false}
-                strokeWidth={2}
+              <Tooltip
+                labelFormatter={(label) => {
+                  const suffix =
+                    hasPartialMonth && label === currentMonth
+                      ? ' (dados parciais)'
+                      : '';
+                  return `${label}${suffix}`;
+                }}
+                formatter={(v) => [`${Number(v).toFixed(1)}%`]}
+                contentStyle={TOOLTIP_STYLE.contentStyle}
+                labelStyle={TOOLTIP_STYLE.labelStyle}
+                itemStyle={TOOLTIP_STYLE.itemStyle}
+                cursor={TOOLTIP_STYLE.cursor}
               />
+              {hasPartialMonth && chartData.length >= 2 && (
+                <ReferenceArea
+                  x1={String(chartData[chartData.length - 2].anoMes)}
+                  x2={String(chartData[chartData.length - 1].anoMes)}
+                  fill="#f8fafc"
+                  stroke="#e2e8f0"
+                  strokeOpacity={0.5}
+                  label={{ value: 'mês atual', position: 'insideTopLeft', fontSize: 9, fill: '#94a3b8' }}
+                />
+              )}
+              {regioes.map((r) => (
+                <Line
+                  key={r}
+                  type="monotone"
+                  dataKey={r}
+                  stroke={REGION_COLORS[r]}
+                  dot={false}
+                  strokeWidth={2}
+                  label={makeLabel(r)}
+                />
+              ))}
             </LineChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Crescimento acumulado + Ticket médio */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-card border border-border">
+          <div className="px-[18px] py-[14px] border-b border-border-s">
+            <h2 className="text-[13px] font-semibold text-main">Crescimento Acumulado por Região</h2>
+          </div>
+          <div className="px-[18px] py-[12px]">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={data.crescimentoAcumulado} margin={{ left: 10, right: 10 }}>
+                <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
+                <YAxis unit=" pp" tick={{ fontSize: 10 }} />
+                <Tooltip
+                  formatter={(v) => [`${Number(v).toFixed(1)} pp`, 'Variação']}
+                  contentStyle={TOOLTIP_STYLE.contentStyle}
+                  labelStyle={TOOLTIP_STYLE.labelStyle}
+                  itemStyle={TOOLTIP_STYLE.itemStyle}
+                  cursor={TOOLTIP_STYLE.cursor}
+                />
+                <Bar dataKey="variacaoPp" name="Crescimento (pp)" radius={[4, 4, 0, 0]}>
+                  {data.crescimentoAcumulado.map((entry) => (
+                    <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#64748b'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-card border border-border">
+          <div className="px-[18px] py-[14px] border-b border-border-s">
+            <h2 className="text-[13px] font-semibold text-main">Evolução do Ticket Médio Nacional</h2>
+          </div>
+          <div className="px-[18px] py-[12px]">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={ticketData} margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis
+                  dataKey="anoMes"
+                  tick={{ fontSize: 9 }}
+                  interval={Math.floor(ticketData.length / 8)}
+                  angle={-30}
+                  textAnchor="end"
+                />
+                <YAxis
+                  tick={{ fontSize: 10 }}
+                  tickFormatter={(v) => `R$ ${Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
+                />
+                <Tooltip
+                  formatter={(v) => [
+                    `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                    'Ticket Médio',
+                  ]}
+                  contentStyle={TOOLTIP_STYLE.contentStyle}
+                  labelStyle={TOOLTIP_STYLE.labelStyle}
+                  itemStyle={TOOLTIP_STYLE.itemStyle}
+                  cursor={TOOLTIP_STYLE.cursor}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="ticket"
+                  stroke="#3b82f6"
+                  dot={false}
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>

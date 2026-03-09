@@ -30,10 +30,10 @@ export function AnaliseMunicipal() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Análise Municipal</h1>
+      <h1 className="text-[20px] font-bold text-main mb-4">Análise Municipal</h1>
 
       {/* Barra de filtros */}
-      <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="flex flex-wrap gap-4 mb-6 px-[16px] py-[10px] bg-white rounded-filter border border-border">
         <MunicipioSearch
           municipios={municipios}
           selected={municipioSelecionado}
@@ -41,10 +41,10 @@ export function AnaliseMunicipal() {
           loading={loadingLista}
         />
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">Mês:</label>
+          <label className="text-[13px] font-medium text-main">Mês:</label>
           <input
             type="month"
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
             value={anoMes ?? ''}
             onChange={(e) => setAnoMes(e.target.value || null)}
           />
@@ -53,12 +53,12 @@ export function AnaliseMunicipal() {
 
       {/* Estado vazio */}
       {!municipioSelecionado && (
-        <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex flex-col items-center justify-center py-24 text-muted">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-[#cbd5e1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
           </svg>
-          <p className="text-lg font-medium">Busque um município pelo nome</p>
-          <p className="text-sm mt-1">Digite ao menos 2 caracteres para ver sugestões</p>
+          <p className="text-lg font-medium text-secondary">Busque um município pelo nome</p>
+          <p className="text-sm mt-1 text-muted">Digite ao menos 2 caracteres para ver sugestões</p>
         </div>
       )}
 
@@ -71,9 +71,9 @@ export function AnaliseMunicipal() {
         <>
           {/* Cabeçalho do município */}
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-xl font-bold text-gray-900">{data.municipioNome}</h2>
+            <h2 className="text-xl font-bold text-main">{data.municipioNome}</h2>
             <RegionBadge regiao={data.regiao} siglaRegiao={data.siglaRegiao} />
-            <span className="text-sm text-gray-500">— {data.estado}</span>
+            <span className="text-sm text-secondary">— {data.estado}</span>
           </div>
 
           {/* Hero: Mapa (esquerda) + KPIs (direita) */}
@@ -81,14 +81,18 @@ export function AnaliseMunicipal() {
 
             {/* Mapa do município */}
             <div className="flex-1">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <h3 className="text-base font-semibold text-gray-700 mb-3">Território Municipal</h3>
-                <MapaCoropletico
-                  municipios={mapaMunicipios}
-                  height={440}
-                  useAbsoluteScale={true}
-                  showTileLayer={true}
-                />
+              <div className="bg-white rounded-card border border-border">
+                <div className="px-[18px] py-[14px] border-b border-border-s">
+                  <h3 className="text-[13px] font-semibold text-main">Território Municipal</h3>
+                </div>
+                <div className="px-[18px] py-[12px]">
+                  <MapaCoropletico
+                    municipios={mapaMunicipios}
+                    height={440}
+                    useAbsoluteScale={true}
+                    showTileLayer={true}
+                  />
+                </div>
               </div>
             </div>
 
@@ -125,27 +129,31 @@ export function AnaliseMunicipal() {
           </div>
 
           {/* Indicadores Socioeconômicos */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-            <h3 className="text-base font-semibold text-gray-700 mb-4">Indicadores Socioeconômicos</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <KpiCard
-                title="PIB per Capita"
-                value={data.pibPerCapita != null
-                  ? `R$ ${data.pibPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  : '—'}
-                subtitle="Produto Interno Bruto por habitante"
-              />
-              <KpiCard
-                title="IDHM"
-                value={data.idhm?.toFixed(4) ?? '—'}
-                subtitle="Índice de Desenvolvimento Humano Municipal"
-              />
-              <KpiCard
-                title="Taxa de Urbanização"
-                value={data.taxaUrbanizacao?.toFixed(1) ?? '—'}
-                unit="%"
-                subtitle="Proporção da população urbana"
-              />
+          <div className="bg-white rounded-card border border-border">
+            <div className="px-[18px] py-[14px] border-b border-border-s">
+              <h3 className="text-[13px] font-semibold text-main">Indicadores Socioeconômicos</h3>
+            </div>
+            <div className="px-[18px] py-[12px]">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <KpiCard
+                  title="PIB per Capita"
+                  value={data.pibPerCapita != null
+                    ? `R$ ${data.pibPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                    : '—'}
+                  subtitle="Produto Interno Bruto por habitante"
+                />
+                <KpiCard
+                  title="IDHM"
+                  value={data.idhm?.toFixed(4) ?? '—'}
+                  subtitle="Índice de Desenvolvimento Humano Municipal"
+                />
+                <KpiCard
+                  title="Taxa de Urbanização"
+                  value={data.taxaUrbanizacao?.toFixed(1) ?? '—'}
+                  unit="%"
+                  subtitle="Proporção da população urbana"
+                />
+              </div>
             </div>
           </div>
         </>
