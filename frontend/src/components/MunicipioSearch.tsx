@@ -45,14 +45,14 @@ export function MunicipioSearch({ municipios, selected, onSelect, loading = fals
 
   return (
     <div ref={containerRef} className="relative flex-1 min-w-[280px]">
-      <div className={`flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white ${selected ? 'border-blue-300' : 'border-gray-200'}`}>
+      <div className={`flex items-center gap-2 border rounded-input px-3 py-1.5 bg-white ${selected ? 'border-accent' : 'border-border'}`}>
         {selected && (
-          <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded px-2 py-0.5 text-sm shrink-0">
-            <span className="font-medium text-blue-800">{selected.municipioNome}</span>
-            <span className="text-blue-500 text-xs">— {selected.estado}</span>
+          <div className="flex items-center gap-1 bg-accent-bg border border-accent/30 rounded px-2 py-[3px] text-[13px] shrink-0">
+            <span className="font-medium text-accent">{selected.municipioNome}</span>
+            <span className="text-secondary text-xs">— {selected.estado}</span>
             <button
               onClick={handleClear}
-              className="ml-1 text-blue-400 hover:text-blue-700 font-bold text-base leading-none"
+              className="ml-1 text-accent/60 hover:text-accent font-bold text-base leading-none"
               aria-label="Limpar seleção"
             >
               ×
@@ -63,7 +63,7 @@ export function MunicipioSearch({ municipios, selected, onSelect, loading = fals
           type="text"
           placeholder={loading ? 'Carregando municípios...' : selected ? 'Trocar município...' : 'Buscar município...'}
           disabled={loading}
-          className="flex-1 min-w-[100px] text-sm focus:outline-none bg-transparent disabled:text-gray-400"
+          className="flex-1 min-w-[100px] text-[13px] focus:outline-none bg-transparent disabled:text-muted"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -74,22 +74,22 @@ export function MunicipioSearch({ municipios, selected, onSelect, loading = fals
       </div>
 
       {open && filtered.length > 0 && (
-        <ul className="absolute z-50 top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        <ul className="absolute z-50 top-full mt-1 left-0 right-0 bg-white border border-border rounded-input shadow-lg max-h-64 overflow-y-auto">
           {filtered.map((m) => (
             <li
               key={m.municipioIbge}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 flex items-center justify-between"
+              className="px-3 py-2 text-[13px] cursor-pointer hover:bg-accent-bg flex items-center justify-between"
               onMouseDown={() => handleSelect(m)}
             >
-              <span className="font-medium text-gray-800">{m.municipioNome}</span>
-              <span className="text-gray-400 text-xs ml-2">{m.estado}</span>
+              <span className="font-medium text-main">{m.municipioNome}</span>
+              <span className="text-muted text-xs ml-2">{m.estado}</span>
             </li>
           ))}
         </ul>
       )}
 
       {open && query.length >= 2 && filtered.length === 0 && (
-        <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2 text-sm text-gray-500">
+        <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-white border border-border rounded-input shadow-lg px-3 py-2 text-[13px] text-secondary">
           Nenhum município encontrado
         </div>
       )}
