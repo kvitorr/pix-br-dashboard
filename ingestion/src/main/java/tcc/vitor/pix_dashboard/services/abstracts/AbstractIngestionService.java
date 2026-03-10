@@ -32,6 +32,11 @@ public abstract class AbstractIngestionService<T> {
 
     protected abstract String knownErrorCode();
 
+    /** Hook chamado após ingestão bem-sucedida. Subclasses podem sobrescrever para pós-processamento. */
+    protected void onSuccess(List<T> records, IngestionRun run, String param) {
+        // no-op por padrão
+    }
+
     public IngestionRun ingest(String param) {
         log().atInfo()
                 .addKeyValue("param", param)
@@ -52,6 +57,14 @@ public abstract class AbstractIngestionService<T> {
                     .addKeyValue("upserted", upserted)
                     .addKeyValue("durationMs", durationMs)
                     .log("Ingestao de {} concluida com sucesso", sourceName());
+
+            try {
+                onSuccess(records, run, param);
+            } catch (Exception e) {
+                log().atWarn()
+                        .addKeyValue("error", e.getMessage())
+                        .log("Pos-processamento falhou apos ingestao de {}", sourceName());
+            }
 
             return run;
 

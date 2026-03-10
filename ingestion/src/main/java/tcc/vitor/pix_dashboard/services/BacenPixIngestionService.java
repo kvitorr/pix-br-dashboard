@@ -20,13 +20,16 @@ public class BacenPixIngestionService extends AbstractIngestionService<PixTransa
 
     private final BcbPixClient bcbPixClient;
     private final PixPersistenceService pixPersistenceService;
+    private final MaterializedViewRefreshService matviewRefreshService;
 
     public BacenPixIngestionService(IngestionRunManager runManager,
                                     BcbPixClient bcbPixClient,
-                                    PixPersistenceService pixPersistenceService) {
+                                    PixPersistenceService pixPersistenceService,
+                                    MaterializedViewRefreshService matviewRefreshService) {
         super(runManager);
         this.bcbPixClient = bcbPixClient;
         this.pixPersistenceService = pixPersistenceService;
+        this.matviewRefreshService = matviewRefreshService;
     }
 
     @Override
@@ -67,5 +70,10 @@ public class BacenPixIngestionService extends AbstractIngestionService<PixTransa
     @Override
     protected String knownErrorCode() {
         return "BCB_API_ERROR";
+    }
+
+    @Override
+    protected void onSuccess(List<PixTransacaoMunicipioDTO> records, IngestionRun run, String param) {
+        matviewRefreshService.refreshAll();
     }
 }

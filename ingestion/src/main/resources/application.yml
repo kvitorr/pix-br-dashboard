@@ -19,3 +19,9 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=3600s
+    cache-names: municipio-serie,evolucao-temporal,municipiosAtipicos
