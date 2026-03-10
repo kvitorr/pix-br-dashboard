@@ -161,9 +161,8 @@ public class DashboardQueryRepository {
                 .filter(m -> getMetricaValueFromEntity(m, metrica) > medianaMetrica
                         && m.getPibPerCapita() < medianaPib)
                 .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
-                        (getMetricaValueFromEntity(m, metrica) / medianaMetrica)
-                                - (m.getPibPerCapita() / medianaPib)).reversed())
-                .limit(5)
+                        getMetricaValueFromEntity(m, metrica)).reversed())
+                .limit(10)
                 .map(m -> new MunicipioAtipicoDTO(
                         m.getId().getMunicipioIbge(), m.getMunicipio(), m.getEstado(),
                         m.getRegiao(), m.getSiglaRegiao(),
@@ -181,9 +180,8 @@ public class DashboardQueryRepository {
                 .filter(m -> getMetricaValueFromEntity(m, metrica) < medianaMetrica
                         && m.getPibPerCapita() > medianaPib)
                 .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
-                        (m.getPibPerCapita() / medianaPib)
-                                - (getMetricaValueFromEntity(m, metrica) / medianaMetrica)).reversed())
-                .limit(5)
+                        getMetricaValueFromEntity(m, metrica)))
+                .limit(10)
                 .map(m -> new MunicipioAtipicoDTO(
                         m.getId().getMunicipioIbge(), m.getMunicipio(), m.getEstado(),
                         m.getRegiao(), m.getSiglaRegiao(),
