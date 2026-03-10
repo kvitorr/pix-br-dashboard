@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useMunicipio } from '../hooks/useMunicipio';
 import { MunicipioSearch } from '../components/MunicipioSearch';
 import { MapaCoropletico } from '../components/MapaCoropletico';
@@ -10,7 +10,8 @@ import { GraficoTemporalMunicipio } from '../components/GraficoTemporalMunicipio
 import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import type { MetricaKey } from '../components/GraficoTemporalMunicipio';
 import type { MetricFormato } from '../components/MapaCoropletico';
-import type { MunicipioListItem } from '../types/dashboard';
+import type { MunicipioListItem, MapaMunicipio } from '../types/dashboard';
+import { useVisaoGeral } from '../hooks/useVisaoGeral';
 
 const VARIAVEIS_METRICA: Record<MetricaKey, { label: string; formato: MetricFormato }> = {
   penetracaoPf:  { label: 'Penetração (%)',         formato: 'percent'  },
@@ -18,6 +19,15 @@ const VARIAVEIS_METRICA: Record<MetricaKey, { label: string; formato: MetricForm
   vlPerCapitaPf: { label: 'Volume per Capita (R$)', formato: 'currency' },
   razaoPjPf:     { label: 'Razão PJ/PF',            formato: 'decimal'  },
 };
+
+function calcQuantis(municipios: MapaMunicipio[], key: keyof MapaMunicipio): number[] {
+  const values = municipios
+    .map(m => m[key] as number | null)
+    .filter((v): v is number => v != null)
+    .sort((a, b) => a - b);
+  if (values.length === 0) return [0, 0, 0, 0];
+  return [1, 2, 3, 4].map(q => values[Math.floor((q * values.length) / 5)] ?? 0);
+}
 
 const DEFAULT_MUNICIPIO: MunicipioListItem = {
   municipioIbge: '3550308',
@@ -38,6 +48,11 @@ export function AnaliseMunicipal() {
 
   const { data, loading, error } = useMunicipio(municipioSelecionado?.municipioIbge ?? null, anoMes);
   const showSkeleton = useDelayedLoading(loading);
+  const { data: visaoGeralData } = useVisaoGeral(null, anoMes);
+  const thresholdsMapa = useMemo(
+    () => calcQuantis(visaoGeralData?.mapaMunicipios ?? [], metricaSelecionada),
+    [visaoGeralData?.mapaMunicipios, metricaSelecionada]
+  );
 
   const mapaMunicipios = data
     ? [{
@@ -112,6 +127,7 @@ export function AnaliseMunicipal() {
                       metricKey={metricaSelecionada}
                       metricLabel={metricaConfig.label}
                       metricFormato={metricaConfig.formato}
+                      thresholds={thresholdsMapa}
                       height={440}
                       useAbsoluteScale={true}
                       showTileLayer={true}
