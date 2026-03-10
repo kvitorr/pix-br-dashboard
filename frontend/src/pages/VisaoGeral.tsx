@@ -19,13 +19,14 @@ import type { MapaMunicipio, MunicipioAtipico, MunicipioRanking, PenetracaoRegia
 const VARIAVEIS_MAPA: Array<{
   value: keyof MapaMunicipio;
   label: string;
+  labelCurto: string;
   formato: MetricFormato;
   campoRegiao: keyof PenetracaoRegiao;
 }> = [
-  { value: 'penetracaoPf',  label: 'Penetração (%)',         formato: 'percent',  campoRegiao: 'penetracaoMedia'  },
-  { value: 'ticketMedioPf', label: 'Ticket Médio (R$)',      formato: 'currency', campoRegiao: 'ticketMedioMedia' },
-  { value: 'razaoPjPf',     label: 'Razão PJ/PF',            formato: 'decimal',  campoRegiao: 'razaoMedia'       },
-  { value: 'vlPerCapitaPf', label: 'Volume Per Capita (R$)', formato: 'currency', campoRegiao: 'perCapitaMedia'   },
+  { value: 'penetracaoPf',  label: 'Penetração (%)',         labelCurto: 'Penetração',   formato: 'percent',  campoRegiao: 'penetracaoMedia'  },
+  { value: 'ticketMedioPf', label: 'Ticket Médio (R$)',      labelCurto: 'Ticket Médio', formato: 'currency', campoRegiao: 'ticketMedioMedia' },
+  { value: 'razaoPjPf',     label: 'Razão PJ/PF',            labelCurto: 'Razão PJ/PF', formato: 'decimal',  campoRegiao: 'razaoMedia'       },
+  { value: 'vlPerCapitaPf', label: 'Volume Per Capita (R$)', labelCurto: 'Per Capita',   formato: 'currency', campoRegiao: 'perCapitaMedia'   },
 ];
 
 type MetricaConfig = (typeof VARIAVEIS_MAPA)[number];
@@ -173,7 +174,7 @@ function MunicipiosAtipicosCard({
   items: MunicipioAtipico[];
   metricaConfig: MetricaConfig;
 }) {
-  const [activeGroup, setActiveGroup] = useState<'alta-adocao-baixo-pib' | 'baixa-adocao-alto-pib'>('baixa-adocao-alto-pib');
+  const [activeGroup, setActiveGroup] = useState<'alta-adocao-baixo-pib' | 'baixa-adocao-alto-pib'>('alta-adocao-baixo-pib');
   const isAltaActive = activeGroup === 'alta-adocao-baixo-pib';
   const filteredItems = items.filter((m) => m.tipo === activeGroup);
 
@@ -188,24 +189,24 @@ function MunicipiosAtipicosCard({
         </div>
         <div className="flex gap-1.5 shrink-0">
           <button
-            onClick={() => setActiveGroup('baixa-adocao-alto-pib')}
-            className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
-              !isAltaActive
-                ? 'bg-accent-bg text-accent border-accent/30'
-                : 'bg-subtle text-secondary border-border hover:text-main'
-            }`}
-          >
-            ↑ PIB alto
-          </button>
-          <button
             onClick={() => setActiveGroup('alta-adocao-baixo-pib')}
             className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
               isAltaActive
-                ? 'bg-orange-50 text-orange-600 border-orange-200'
+                ? 'bg-pos-bg text-pos border-pos/30'
                 : 'bg-subtle text-secondary border-border hover:text-main'
             }`}
           >
-            ↓ PIB baixo
+            ▲ {metricaConfig.labelCurto} alta
+          </button>
+          <button
+            onClick={() => setActiveGroup('baixa-adocao-alto-pib')}
+            className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
+              !isAltaActive
+                ? 'bg-neg-bg text-neg border-neg/30'
+                : 'bg-subtle text-secondary border-border hover:text-main'
+            }`}
+          >
+            ▼ {metricaConfig.labelCurto} baixa
           </button>
         </div>
       </div>
