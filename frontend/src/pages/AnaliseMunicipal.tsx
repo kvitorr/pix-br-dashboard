@@ -86,7 +86,7 @@ export function AnaliseMunicipal() {
                 </div>
               </div>
 
-              {/* KPIs */}
+              {/* KPIs + Indicadores Socioeconômicos */}
               <div className="flex flex-col gap-4 lg:w-[390px]">
                 <div className="grid grid-cols-2 gap-3">
                   <KpiCard
@@ -115,34 +115,34 @@ export function AnaliseMunicipal() {
                     subtitle="Total transacionado por habitante"
                   />
                 </div>
-              </div>
-            </div>
 
-            {/* Indicadores Socioeconômicos */}
-            <div className="bg-white rounded-card border border-border">
-              <div className="px-[18px] py-[14px] border-b border-border-s">
-                <h3 className="text-[13px] font-semibold text-main">Indicadores Socioeconômicos</h3>
-              </div>
-              <div className="px-[18px] py-[12px]">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <KpiCard
-                    title="PIB per Capita"
-                    value={data.pibPerCapita != null
-                      ? `R$ ${data.pibPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                      : '—'}
-                    subtitle="Produto Interno Bruto por habitante"
-                  />
-                  <KpiCard
-                    title="IDHM"
-                    value={data.idhm?.toFixed(4) ?? '—'}
-                    subtitle="Índice de Desenvolvimento Humano Municipal"
-                  />
-                  <KpiCard
-                    title="Taxa de Urbanização"
-                    value={data.taxaUrbanizacao?.toFixed(1) ?? '—'}
-                    unit="%"
-                    subtitle="Proporção da população urbana"
-                  />
+                {/* Indicadores Socioeconômicos */}
+                <div className="bg-white rounded-card border border-border">
+                  <div className="px-[18px] py-[14px] border-b border-border-s">
+                    <h3 className="text-[13px] font-semibold text-main">Indicadores Socioeconômicos</h3>
+                  </div>
+                  <div className="px-[18px] py-[12px]">
+                    <div className="grid grid-cols-1 gap-3">
+                      <KpiCard
+                        title="PIB per Capita"
+                        value={data.pibPerCapita != null
+                          ? `R$ ${data.pibPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                          : '—'}
+                        subtitle="Produto Interno Bruto por habitante"
+                      />
+                      <KpiCard
+                        title="IDHM"
+                        value={data.idhm?.toFixed(4) ?? '—'}
+                        subtitle="Índice de Desenvolvimento Humano Municipal"
+                      />
+                      <KpiCard
+                        title="Taxa de Urbanização"
+                        value={data.taxaUrbanizacao?.toFixed(1) ?? '—'}
+                        unit="%"
+                        subtitle="Proporção da população urbana"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
