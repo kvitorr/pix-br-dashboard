@@ -8,7 +8,16 @@ import { ErrorState } from '../components/ErrorState';
 import { AnaliseMunicipalSkeleton } from '../components/Skeleton';
 import { GraficoTemporalMunicipio } from '../components/GraficoTemporalMunicipio';
 import { useDelayedLoading } from '../hooks/useDelayedLoading';
+import type { MetricaKey } from '../components/GraficoTemporalMunicipio';
+import type { MetricFormato } from '../components/MapaCoropletico';
 import type { MunicipioListItem } from '../types/dashboard';
+
+const VARIAVEIS_METRICA: Record<MetricaKey, { label: string; formato: MetricFormato }> = {
+  penetracaoPf:  { label: 'Penetração (%)',         formato: 'percent'  },
+  ticketMedioPf: { label: 'Ticket Médio (R$)',      formato: 'currency' },
+  vlPerCapitaPf: { label: 'Volume per Capita (R$)', formato: 'currency' },
+  razaoPjPf:     { label: 'Razão PJ/PF',            formato: 'decimal'  },
+};
 
 const DEFAULT_MUNICIPIO: MunicipioListItem = {
   municipioIbge: '3550308',
@@ -24,12 +33,21 @@ export function AnaliseMunicipal() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [metricaSelecionada, setMetricaSelecionada] = useState<MetricaKey>('penetracaoPf');
+  const metricaConfig = VARIAVEIS_METRICA[metricaSelecionada];
 
   const { data, loading, error } = useMunicipio(municipioSelecionado?.municipioIbge ?? null, anoMes);
   const showSkeleton = useDelayedLoading(loading);
 
   const mapaMunicipios = data
-    ? [{ municipioIbge: data.municipioIbge, municipioNome: data.municipioNome, penetracaoPf: data.penetracaoPf }]
+    ? [{
+        municipioIbge:  data.municipioIbge,
+        municipioNome:  data.municipioNome,
+        penetracaoPf:   data.penetracaoPf,
+        ticketMedioPf:  data.ticketMedioPf,
+        vlPerCapitaPf:  data.vlPerCapitaPf,
+        razaoPjPf:      data.razaoPjPf,
+      }]
     : [];
 
   return (
@@ -50,6 +68,18 @@ export function AnaliseMunicipal() {
             value={anoMes ?? ''}
             onChange={(e) => setAnoMes(e.target.value || null)}
           />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-[13px] font-medium text-main">Métrica:</label>
+          <select
+            value={metricaSelecionada}
+            onChange={(e) => setMetricaSelecionada(e.target.value as MetricaKey)}
+            className="border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+          >
+            {(Object.keys(VARIAVEIS_METRICA) as MetricaKey[]).map((key) => (
+              <option key={key} value={key}>{VARIAVEIS_METRICA[key].label}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -79,6 +109,9 @@ export function AnaliseMunicipal() {
                   <div className="px-[18px] py-[12px] flex-1">
                     <MapaCoropletico
                       municipios={mapaMunicipios}
+                      metricKey={metricaSelecionada}
+                      metricLabel={metricaConfig.label}
+                      metricFormato={metricaConfig.formato}
                       height={440}
                       useAbsoluteScale={true}
                       showTileLayer={true}
@@ -149,6 +182,7 @@ export function AnaliseMunicipal() {
                 ibge={data.municipioIbge}
                 municipioNome={data.municipioNome}
                 regiao={data.regiao}
+                metricaSelecionada={metricaSelecionada}
               />
             </div>
         </div>

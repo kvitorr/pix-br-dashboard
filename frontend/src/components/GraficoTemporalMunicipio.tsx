@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   LineChart,
   Line,
@@ -14,7 +13,7 @@ import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import { ChartCardSkeleton } from './Skeleton';
 import { REGION_COLORS, TOOLTIP_STYLE } from '../constants/colors';
 
-type MetricaKey = 'penetracaoPf' | 'ticketMedioPf' | 'vlPerCapitaPf' | 'razaoPjPf';
+export type MetricaKey = 'penetracaoPf' | 'ticketMedioPf' | 'vlPerCapitaPf' | 'razaoPjPf';
 
 interface MetricaConfig {
   label: string;
@@ -83,10 +82,10 @@ interface Props {
   ibge: string;
   municipioNome: string;
   regiao: string;
+  metricaSelecionada: MetricaKey;
 }
 
-export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao }: Props) {
-  const [metricaSelecionada, setMetricaSelecionada] = useState<MetricaKey>('penetracaoPf');
+export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaSelecionada }: Props) {
   const { data, loading, error } = useMunicipioSerie(ibge, null, null);
   const showSkeleton = useDelayedLoading(loading);
 
@@ -105,30 +104,11 @@ export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao }: Props)
 
   return (
     <div className="bg-white rounded-card border border-border">
-      {/* Cabeçalho com título e seletor de métrica */}
-      <div className="px-[18px] py-[14px] border-b border-border-s flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h3 className="text-[13px] font-semibold text-main">Evolução Temporal</h3>
-        <div className="flex flex-wrap gap-1.5">
-          {(Object.keys(METRICAS) as MetricaKey[]).map((key) => (
-            <button
-              key={key}
-              onClick={() => setMetricaSelecionada(key)}
-              className={[
-                'px-3 py-1 rounded-full text-[11px] font-medium transition-colors',
-                metricaSelecionada === key
-                  ? 'text-white'
-                  : 'bg-subtle text-secondary hover:bg-border',
-              ].join(' ')}
-              style={
-                metricaSelecionada === key
-                  ? { backgroundColor: corMunicipio }
-                  : undefined
-              }
-            >
-              {METRICAS[key].label}
-            </button>
-          ))}
-        </div>
+      {/* Cabeçalho */}
+      <div className="px-[18px] py-[14px] border-b border-border-s">
+        <h3 className="text-[13px] font-semibold text-main">
+          Evolução Temporal — {config.label}
+        </h3>
       </div>
 
       {/* Gráfico */}
