@@ -29,12 +29,6 @@ export function MunicipioSearch({ selected, onSelect }: MunicipioSearchProps) {
     setOpen(false);
   };
 
-  const handleClear = () => {
-    onSelect(null);
-    setQuery('');
-    setOpen(false);
-  };
-
   const showDropdown = open && query.length >= 2;
 
   return (
@@ -44,13 +38,6 @@ export function MunicipioSearch({ selected, onSelect }: MunicipioSearchProps) {
           <div className="flex items-center gap-1 bg-accent-bg border border-accent/30 rounded px-2 py-[3px] text-[13px] shrink-0">
             <span className="font-medium text-accent">{selected.municipioNome}</span>
             <span className="text-secondary text-xs">— {selected.estado}</span>
-            <button
-              onClick={handleClear}
-              className="ml-1 text-accent/60 hover:text-accent font-bold text-base leading-none"
-              aria-label="Limpar seleção"
-            >
-              ×
-            </button>
           </div>
         )}
         <input
