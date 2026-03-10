@@ -173,7 +173,7 @@ function MunicipiosAtipicosCard({
   items: MunicipioAtipico[];
   metricaConfig: MetricaConfig;
 }) {
-  const [activeGroup, setActiveGroup] = useState<'alta-adocao-baixo-pib' | 'baixa-adocao-alto-pib'>('alta-adocao-baixo-pib');
+  const [activeGroup, setActiveGroup] = useState<'alta-adocao-baixo-pib' | 'baixa-adocao-alto-pib'>('baixa-adocao-alto-pib');
   const isAltaActive = activeGroup === 'alta-adocao-baixo-pib';
   const filteredItems = items.filter((m) => m.tipo === activeGroup);
 
@@ -188,16 +188,6 @@ function MunicipiosAtipicosCard({
         </div>
         <div className="flex gap-1.5 shrink-0">
           <button
-            onClick={() => setActiveGroup('alta-adocao-baixo-pib')}
-            className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
-              isAltaActive
-                ? 'bg-orange-50 text-orange-600 border-orange-200'
-                : 'bg-subtle text-secondary border-border hover:text-main'
-            }`}
-          >
-            ↑ PIB baixo
-          </button>
-          <button
             onClick={() => setActiveGroup('baixa-adocao-alto-pib')}
             className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
               !isAltaActive
@@ -205,7 +195,17 @@ function MunicipiosAtipicosCard({
                 : 'bg-subtle text-secondary border-border hover:text-main'
             }`}
           >
-            ↓ PIB alto
+            ↑ PIB alto
+          </button>
+          <button
+            onClick={() => setActiveGroup('alta-adocao-baixo-pib')}
+            className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
+              isAltaActive
+                ? 'bg-orange-50 text-orange-600 border-orange-200'
+                : 'bg-subtle text-secondary border-border hover:text-main'
+            }`}
+          >
+            ↓ PIB baixo
           </button>
         </div>
       </div>
