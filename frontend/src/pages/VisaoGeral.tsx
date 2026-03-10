@@ -173,24 +173,47 @@ function MunicipiosAtipicosCard({
   items: MunicipioAtipico[];
   metricaConfig: MetricaConfig;
 }) {
+  const [activeGroup, setActiveGroup] = useState<'alta-adocao-baixo-pib' | 'baixa-adocao-alto-pib'>('alta-adocao-baixo-pib');
+  const isAltaActive = activeGroup === 'alta-adocao-baixo-pib';
+  const filteredItems = items.filter((m) => m.tipo === activeGroup);
+
   return (
     <div className="bg-white rounded-card border border-border flex-1">
-      <div className="px-[18px] py-[14px] border-b border-border-s flex items-start justify-between gap-3">
+      <div className="px-[18px] py-[14px] border-b border-border-s flex items-center justify-between gap-3">
         <div>
           <h2 className="text-[13px] font-semibold text-main">Municípios Atípicos</h2>
           <p className="text-xs text-muted mt-0.5">
             {metricaConfig.label} alto com baixo PIB · ou vice-versa
           </p>
         </div>
-        <span className="shrink-0 text-[11px] text-muted bg-subtle border border-border rounded-badge px-2 py-1">
-          ⓘ Analiticamente relevantes para o TCC
-        </span>
+        <div className="flex gap-1.5 shrink-0">
+          <button
+            onClick={() => setActiveGroup('alta-adocao-baixo-pib')}
+            className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
+              isAltaActive
+                ? 'bg-orange-50 text-orange-600 border-orange-200'
+                : 'bg-subtle text-secondary border-border hover:text-main'
+            }`}
+          >
+            ↑ PIB baixo
+          </button>
+          <button
+            onClick={() => setActiveGroup('baixa-adocao-alto-pib')}
+            className={`px-3 py-1 rounded-badge text-[12px] font-semibold border transition-colors ${
+              !isAltaActive
+                ? 'bg-accent-bg text-accent border-accent/30'
+                : 'bg-subtle text-secondary border-border hover:text-main'
+            }`}
+          >
+            ↓ PIB alto
+          </button>
+        </div>
       </div>
       <div className="px-[18px] py-[12px] flex flex-col gap-3">
-        {items.length === 0 && (
+        {filteredItems.length === 0 && (
           <p className="text-muted text-sm text-center py-4">Sem dados disponíveis</p>
         )}
-        {items.map((m) => {
+        {filteredItems.map((m) => {
           const isAlta = m.tipo === 'alta-adocao-baixo-pib';
           const val = getMetricValue(m, metricaConfig.value);
           return (
