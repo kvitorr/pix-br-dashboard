@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   LineChart,
   Line,
@@ -86,7 +87,10 @@ interface Props {
 }
 
 export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaSelecionada }: Props) {
-  const { data, loading, error } = useMunicipioSerie(ibge, null, null);
+  const [dataInicio, setDataInicio] = useState<string | null>(null);
+  const [dataFim, setDataFim] = useState<string | null>(null);
+
+  const { data, loading, error } = useMunicipioSerie(ibge, dataInicio, dataFim);
   const showSkeleton = useDelayedLoading(loading);
 
   const corMunicipio = REGION_COLORS[regiao] ?? '#3b82f6';
@@ -105,10 +109,30 @@ export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaS
   return (
     <div className="bg-white rounded-card border border-border">
       {/* Cabeçalho */}
-      <div className="px-[18px] py-[14px] border-b border-border-s">
+      <div className="px-[18px] py-[14px] border-b border-border-s flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-[13px] font-semibold text-main">
           Evolução Temporal — {config.label}
         </h3>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <label className="text-[12px] text-secondary whitespace-nowrap">De:</label>
+            <input
+              type="month"
+              value={dataInicio ?? ''}
+              onChange={(e) => setDataInicio(e.target.value || null)}
+              className="border border-border rounded-input px-2 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-[12px] text-secondary whitespace-nowrap">Até:</label>
+            <input
+              type="month"
+              value={dataFim ?? ''}
+              onChange={(e) => setDataFim(e.target.value || null)}
+              className="border border-border rounded-input px-2 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Gráfico */}
