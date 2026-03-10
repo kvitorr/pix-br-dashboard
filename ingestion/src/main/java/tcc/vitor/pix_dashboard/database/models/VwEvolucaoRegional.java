@@ -23,6 +23,9 @@ public class VwEvolucaoRegional {
     @Column(name = "valor_per_capita", columnDefinition = "numeric")
     private Double valorPerCapita;
 
+    @Column(name = "razao_pj_pf_media", columnDefinition = "numeric")
+    private Double razaoPjPfMedia;
+
     @Column(name = "populacao_total")
     private Long populacaoTotal;
 
@@ -31,5 +34,6 @@ public class VwEvolucaoRegional {
     public Double getPenetracaoMedia() { return penetracaoMedia; }
     public Double getTicketMedio() { return ticketMedio; }
     public Double getValorPerCapita() { return valorPerCapita; }
+    public Double getRazaoPjPfMedia() { return razaoPjPfMedia; }
     public Long getPopulacaoTotal() { return populacaoTotal; }
 }

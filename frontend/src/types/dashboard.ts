@@ -112,6 +112,8 @@ export interface RegiaoPenetracao {
   regiao: string;
   penetracaoMedia: number;
   ticketMedio: number | null;
+  vlPerCapitaMedia: number | null;
+  razaoPjPfMedia: number | null;
 }
 
 export interface SerieTemporalPonto {

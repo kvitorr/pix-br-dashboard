@@ -90,7 +90,11 @@ public class DashboardService {
             Double ticket = row.getTicketMedio();
 
             porMes.computeIfAbsent(mes, k -> new ArrayList<>())
-                    .add(new RegiaoPenetracaoDTO(reg, penetracao, ticket));
+                    .add(new RegiaoPenetracaoDTO(
+                            reg, penetracao, ticket,
+                            row.getVlPerCapitaMedia(),
+                            row.getRazaoPjPfMedia()
+                    ));
 
             primeiroMesPorRegiao.putIfAbsent(reg, penetracao);
             if (penetracao != null) {
