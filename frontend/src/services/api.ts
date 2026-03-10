@@ -27,8 +27,8 @@ export const api = {
   visaoGeral: (regiao?: string | null, anoMes?: string | null) =>
     get<VisaoGeralResponse>(buildUrl('/visao-geral', { regiao, anoMes })),
 
-  disparidadeRegional: (regiao?: string | null, anoMes?: string | null) =>
-    get<DisparidadeRegionalResponse>(buildUrl('/disparidade-regional', { regiao, anoMes })),
+  disparidadeRegional: (regiao?: string | null, anoMes?: string | null, metrica?: string | null) =>
+    get<DisparidadeRegionalResponse>(buildUrl('/disparidade-regional', { regiao, anoMes, metrica })),
 
   evolucaoTemporal: (regiao?: string | null, dataInicio?: string | null, dataFim?: string | null) =>
     get<EvolucaoTemporalResponse>(buildUrl('/evolucao-temporal', { regiao, dataInicio, dataFim })),

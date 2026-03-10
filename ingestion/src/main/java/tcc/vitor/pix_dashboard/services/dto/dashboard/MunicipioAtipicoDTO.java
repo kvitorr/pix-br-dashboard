@@ -9,6 +9,9 @@ public record MunicipioAtipicoDTO(
         String regiao,
         String siglaRegiao,
         Double penetracaoPf,
+        Double ticketMedioPf,
+        Double razaoPjPf,
+        Double vlPerCapitaPf,
         Double pibPerCapita,
         String tipo,
         List<String> tags
