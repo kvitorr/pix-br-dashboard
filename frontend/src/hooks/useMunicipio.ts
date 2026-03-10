@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { MunicipioDetalhes, MunicipioListItem } from '../types/dashboard';
+import type { MunicipioDetalhes, MunicipioListItem, MunicipioSerieResponse } from '../types/dashboard';
 
 export function useMunicipio(ibge: string | null, anoMes: string | null) {
   const [data, setData] = useState<MunicipioDetalhes | null>(null);
@@ -45,6 +45,33 @@ export function useMunicipioSearch(query: string, limit = 10) {
   }, [query, limit]);
 
   return { results, loading };
+}
+
+export function useMunicipioSerie(
+  ibge: string | null,
+  dataInicio: string | null,
+  dataFim: string | null,
+) {
+  const [data, setData] = useState<MunicipioSerieResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!ibge) {
+      setData(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    api.municipioSerie(ibge, dataInicio, dataFim)
+      .then(setData)
+      .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
+      .finally(() => setLoading(false));
+  }, [ibge, dataInicio, dataFim]);
+
+  return { data, loading, error };
 }
 
 export function useMunicipioList() {

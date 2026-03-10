@@ -6,6 +6,7 @@ import { KpiCard } from '../components/KpiCard';
 import { RegionBadge } from '../components/RegionBadge';
 import { ErrorState } from '../components/ErrorState';
 import { AnaliseMunicipalSkeleton } from '../components/Skeleton';
+import { GraficoTemporalMunicipio } from '../components/GraficoTemporalMunicipio';
 import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import type { MunicipioListItem } from '../types/dashboard';
 
@@ -140,6 +141,15 @@ export function AnaliseMunicipal() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Gráfico Temporal */}
+            <div className="mt-6">
+              <GraficoTemporalMunicipio
+                ibge={data.municipioIbge}
+                municipioNome={data.municipioNome}
+                regiao={data.regiao}
+              />
             </div>
         </div>
       ) : !municipioSelecionado ? (

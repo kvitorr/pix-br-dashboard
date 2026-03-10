@@ -4,6 +4,7 @@ import type {
   EvolucaoTemporalResponse,
   MunicipioListItem,
   MunicipioDetalhes,
+  MunicipioSerieResponse,
   FatoresSocioeconomicosResponse,
 } from '../types/dashboard';
 
@@ -41,6 +42,9 @@ export const api = {
 
   municipio: (ibge: string, anoMes?: string | null) =>
     get<MunicipioDetalhes>(buildUrl(`/municipio/${ibge}`, { anoMes })),
+
+  municipioSerie: (ibge: string, dataInicio?: string | null, dataFim?: string | null) =>
+    get<MunicipioSerieResponse>(buildUrl(`/municipio/${ibge}/serie`, { dataInicio, dataFim })),
 
   fatoresSocioeconomicos: (
     regiao?: string | null,

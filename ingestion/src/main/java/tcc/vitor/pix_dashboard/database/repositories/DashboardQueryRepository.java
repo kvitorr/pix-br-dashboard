@@ -259,6 +259,21 @@ public class DashboardQueryRepository {
                 ));
     }
 
+    public List<VwIndicadoresMunicipio> findSerieMunicipio(
+            String municipioIbge, LocalDate dataInicio, LocalDate dataFim) {
+        return indicadoresRepo.findSerieMunicipio(municipioIbge, dataInicio, dataFim);
+    }
+
+    public List<MediaTemporalProjection> findMediasRegionais(
+            String regiao, LocalDate dataInicio, LocalDate dataFim) {
+        return indicadoresRepo.findMediasRegionais(regiao, dataInicio, dataFim);
+    }
+
+    public List<MediaTemporalProjection> findMediasNacionais(
+            LocalDate dataInicio, LocalDate dataFim) {
+        return indicadoresRepo.findMediasNacionais(dataInicio, dataFim);
+    }
+
     // =========================================================================
     // Evolução Temporal
     // =========================================================================

@@ -203,4 +203,50 @@ public interface VwIndicadoresMunicipioRepository
     Optional<MunicipioDetalhesProjection> findMunicipioDetalhes(
             @Param("municipioIbge") String municipioIbge,
             @Param("anoMes") LocalDate anoMes);
+
+    @Query("""
+            SELECT v FROM VwIndicadoresMunicipio v
+            WHERE v.id.municipioIbge = :municipioIbge
+              AND v.id.anoMes >= :dataInicio
+              AND v.id.anoMes <= :dataFim
+            ORDER BY v.id.anoMes
+            """)
+    List<VwIndicadoresMunicipio> findSerieMunicipio(
+            @Param("municipioIbge") String municipioIbge,
+            @Param("dataInicio") LocalDate dataInicio,
+            @Param("dataFim") LocalDate dataFim);
+
+    @Query("""
+            SELECT v.id.anoMes          AS anoMes,
+                   AVG(v.penetracaoPf)  AS penetracaoMedia,
+                   AVG(v.ticketMedioPf) AS ticketMedioMedia,
+                   AVG(v.vlPerCapitaPf) AS vlPerCapitaMedia,
+                   AVG(v.razaoPjPf)     AS razaoPjPfMedia
+            FROM VwIndicadoresMunicipio v
+            WHERE v.id.anoMes >= :dataInicio
+              AND v.id.anoMes <= :dataFim
+              AND v.regiao = :regiao
+            GROUP BY v.id.anoMes
+            ORDER BY v.id.anoMes
+            """)
+    List<MediaTemporalProjection> findMediasRegionais(
+            @Param("regiao") String regiao,
+            @Param("dataInicio") LocalDate dataInicio,
+            @Param("dataFim") LocalDate dataFim);
+
+    @Query("""
+            SELECT v.id.anoMes          AS anoMes,
+                   AVG(v.penetracaoPf)  AS penetracaoMedia,
+                   AVG(v.ticketMedioPf) AS ticketMedioMedia,
+                   AVG(v.vlPerCapitaPf) AS vlPerCapitaMedia,
+                   AVG(v.razaoPjPf)     AS razaoPjPfMedia
+            FROM VwIndicadoresMunicipio v
+            WHERE v.id.anoMes >= :dataInicio
+              AND v.id.anoMes <= :dataFim
+            GROUP BY v.id.anoMes
+            ORDER BY v.id.anoMes
+            """)
+    List<MediaTemporalProjection> findMediasNacionais(
+            @Param("dataInicio") LocalDate dataInicio,
+            @Param("dataFim") LocalDate dataFim);
 }
