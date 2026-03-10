@@ -115,7 +115,7 @@ public class DashboardQueryRepository {
                 .filter(m -> getMetricaValueFromEntity(m, metrica) != null)
                 .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
                         getMetricaValueFromEntity(m, metrica)).reversed())
-                .limit(7)
+                .limit(10)
                 .map(this::toRankingDTO)
                 .toList();
     }
@@ -125,7 +125,7 @@ public class DashboardQueryRepository {
                 .filter(m -> getMetricaValueFromEntity(m, metrica) != null)
                 .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
                         getMetricaValueFromEntity(m, metrica)))
-                .limit(7)
+                .limit(10)
                 .map(this::toRankingDTO)
                 .toList();
     }
