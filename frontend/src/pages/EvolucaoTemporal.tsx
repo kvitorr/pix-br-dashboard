@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip,
+  LineChart, Line, XAxis, YAxis, Tooltip, Legend,
   ResponsiveContainer, BarChart, Bar, Cell, CartesianGrid, ReferenceArea,
 } from 'recharts';
 import { useEvolucaoTemporal } from '../hooks/useEvolucaoTemporal';
@@ -46,10 +46,14 @@ export function EvolucaoTemporal() {
     return obj;
   }) ?? [];
 
-  const ticketData = data?.ticketNacionalEvolucao.map((t) => ({
-    anoMes: t.anoMes,
-    ticket: t.ticketMedio,
-  })) ?? [];
+  const ticketData = data?.serieTemporal.map((ponto) => {
+    const obj: Record<string, string | number> = { anoMes: ponto.anoMes };
+    ponto.porRegiao.forEach((r) => {
+      const key = REGIAO_LABEL[r.regiao] ?? r.regiao;
+      if (r.ticketMedio != null) obj[key] = r.ticketMedio;
+    });
+    return obj;
+  }) ?? [];
 
   const regioes = REGIONS.filter((r) => !regiao || r === regiao);
 
@@ -219,7 +223,7 @@ export function EvolucaoTemporal() {
 
               <div className="bg-white rounded-card border border-border">
                 <div className="px-[18px] py-[14px] border-b border-border-s">
-                  <h2 className="text-[13px] font-semibold text-main">Evolução do Ticket Médio Nacional</h2>
+                  <h2 className="text-[13px] font-semibold text-main">Evolução do Ticket Médio por Região</h2>
                 </div>
                 <div className="px-[18px] py-[12px]">
                   <ResponsiveContainer width="100%" height={220}>
@@ -237,22 +241,28 @@ export function EvolucaoTemporal() {
                         tickFormatter={(v) => `R$ ${Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
                       />
                       <Tooltip
-                        formatter={(v) => [
+                        formatter={(v, name) => [
                           `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-                          'Ticket Médio',
+                          name,
                         ]}
                         contentStyle={TOOLTIP_STYLE.contentStyle}
                         labelStyle={TOOLTIP_STYLE.labelStyle}
                         itemStyle={TOOLTIP_STYLE.itemStyle}
                         cursor={TOOLTIP_STYLE.cursor}
                       />
-                      <Line
-                        type="monotone"
-                        dataKey="ticket"
-                        stroke="#3b82f6"
-                        dot={false}
-                        strokeWidth={2}
-                      />
+                      <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} iconType="plainline" />
+                      {regioes.map((r) => (
+                        <Line
+                          key={r}
+                          type="monotone"
+                          dataKey={r}
+                          name={r}
+                          stroke={REGION_COLORS[r]}
+                          dot={false}
+                          strokeWidth={2}
+                          connectNulls
+                        />
+                      ))}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

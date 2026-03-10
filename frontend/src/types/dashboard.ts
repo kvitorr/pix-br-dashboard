@@ -111,6 +111,7 @@ export interface MunicipioDetalhes {
 export interface RegiaoPenetracao {
   regiao: string;
   penetracaoMedia: number;
+  ticketMedio: number | null;
 }
 
 export interface SerieTemporalPonto {
