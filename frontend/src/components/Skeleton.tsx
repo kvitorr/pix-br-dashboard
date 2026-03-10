@@ -1,10 +1,10 @@
 // ─── Building Blocks ─────────────────────────────────────────────────────────
 
-function SkeletonBlock({ className }: { className: string }) {
+export function SkeletonBlock({ className }: { className: string }) {
   return <div className={`bg-gray-200 rounded animate-pulse ${className}`} />;
 }
 
-function KpiCardSkeleton() {
+export function KpiCardSkeleton() {
   return (
     <div className="bg-white rounded-card border border-border px-[18px] py-[14px]">
       <SkeletonBlock className="h-3 w-24 mb-2" />
@@ -14,7 +14,7 @@ function KpiCardSkeleton() {
   );
 }
 
-function ChartCardSkeleton({ height = 220, subtitle = false }: { height?: number; subtitle?: boolean }) {
+export function ChartCardSkeleton({ height = 220, subtitle = false }: { height?: number; subtitle?: boolean }) {
   return (
     <div className="bg-white rounded-card border border-border">
       <div className="px-[18px] py-[14px] border-b border-border-s">
@@ -28,7 +28,7 @@ function ChartCardSkeleton({ height = 220, subtitle = false }: { height?: number
   );
 }
 
-function MapCardSkeleton({ height = 540 }: { height?: number }) {
+export function MapCardSkeleton({ height = 540 }: { height?: number }) {
   return (
     <div className="bg-white rounded-card border border-border h-full flex flex-col">
       <div className="px-[18px] py-[14px] border-b border-border-s">
@@ -41,7 +41,7 @@ function MapCardSkeleton({ height = 540 }: { height?: number }) {
   );
 }
 
-function RankingCardSkeleton() {
+export function RankingCardSkeleton() {
   return (
     <div className="bg-white rounded-card border border-border flex-1">
       <div className="px-[18px] py-[14px] border-b border-border-s flex items-center justify-between gap-3">
@@ -75,7 +75,7 @@ function RankingCardSkeleton() {
   );
 }
 
-function AtipicosCardSkeleton() {
+export function AtipicosCardSkeleton() {
   return (
     <div className="bg-white rounded-card border border-border flex-1">
       <div className="px-[18px] py-[14px] border-b border-border-s flex items-start justify-between gap-3">
@@ -110,7 +110,7 @@ function AtipicosCardSkeleton() {
   );
 }
 
-function SpearmanCardSkeleton() {
+export function SpearmanCardSkeleton() {
   return (
     <div className="bg-white rounded-card border-2 border-accent/20 px-[18px] py-[14px] flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -126,7 +126,7 @@ function SpearmanCardSkeleton() {
   );
 }
 
-function ScatterCardSkeleton() {
+export function ScatterCardSkeleton() {
   return (
     <div className="bg-white rounded-card border border-border flex flex-col">
       <div className="px-[18px] py-[14px] border-b border-border-s">

@@ -21,8 +21,8 @@ interface MetricaConfig {
   municipioKey: keyof import('../types/dashboard').MunicipioSeriePonto;
   regiaoKey: keyof import('../types/dashboard').MunicipioSeriePonto;
   nacionalKey: keyof import('../types/dashboard').MunicipioSeriePonto;
-  formato: (v: number) => string;
-  yTickFormato: (v: number) => string;
+  formato: (v: number | null | undefined) => string;
+  yTickFormato: (v: number | null | undefined) => string;
 }
 
 const METRICAS: Record<MetricaKey, MetricaConfig> = {
@@ -31,38 +31,49 @@ const METRICAS: Record<MetricaKey, MetricaConfig> = {
     municipioKey: 'municipioPenetracaoPf',
     regiaoKey: 'regiaoPenetracaoPf',
     nacionalKey: 'nacionalPenetracaoPf',
-    formato: (v) => `${v.toFixed(1)}%`,
-    yTickFormato: (v) => `${v}%`,
+    formato: (v) => (v != null ? `${v.toFixed(1)}%` : '-'),
+    yTickFormato: (v) => (v != null ? `${v}%` : ''),
   },
   ticketMedioPf: {
     label: 'Ticket Médio PF',
     municipioKey: 'municipioTicketMedioPf',
     regiaoKey: 'regiaoTicketMedioPf',
     nacionalKey: 'nacionalTicketMedioPf',
-    formato: (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-    yTickFormato: (v) =>
-      v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`,
+    formato: (v) =>
+      v != null
+        ? `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        : '-',
+    yTickFormato: (v) => {
+      if (v == null) return '';
+      return v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`;
+    },
   },
   vlPerCapitaPf: {
     label: 'Volume per Capita',
     municipioKey: 'municipioVlPerCapitaPf',
     regiaoKey: 'regiaoVlPerCapitaPf',
     nacionalKey: 'nacionalVlPerCapitaPf',
-    formato: (v) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-    yTickFormato: (v) =>
-      v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`,
+    formato: (v) =>
+      v != null
+        ? `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        : '-',
+    yTickFormato: (v) => {
+      if (v == null) return '';
+      return v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`;
+    },
   },
   razaoPjPf: {
     label: 'Razão PJ/PF',
     municipioKey: 'municipioRazaoPjPf',
     regiaoKey: 'regiaoRazaoPjPf',
     nacionalKey: 'nacionalRazaoPjPf',
-    formato: (v) => v.toFixed(4),
-    yTickFormato: (v) => v.toFixed(2),
+    formato: (v) => (v != null ? v.toFixed(4) : '-'),
+    yTickFormato: (v) => (v != null ? v.toFixed(2) : ''),
   },
 };
 
 function formatarMes(anoMes: string): string {
+  if (!anoMes || !anoMes.includes('-')) return anoMes;
   const [ano, mes] = anoMes.split('-');
   const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   return `${meses[parseInt(mes, 10) - 1]}/${ano.slice(2)}`;
@@ -140,7 +151,7 @@ export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao }: Props)
             />
             <Tooltip
               {...TOOLTIP_STYLE}
-              formatter={(value: number, name: string) => [
+              formatter={(value: number | null | undefined, name: string) => [
                 config.formato(value),
                 name,
               ]}
