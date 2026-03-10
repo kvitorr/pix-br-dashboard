@@ -17,7 +17,9 @@ public interface VwEvolucaoRegionalRepository
             SELECT v.id.anoMes       AS anoMes,
                    v.id.regiao       AS regiao,
                    v.penetracaoMedia AS penetracaoMedia,
-                   v.ticketMedio     AS ticketMedio
+                   v.ticketMedio     AS ticketMedio,
+                   v.valorPerCapita  AS vlPerCapitaMedia,
+                   v.razaoPjPfMedia  AS razaoPjPfMedia
             FROM VwEvolucaoRegional v
             WHERE v.id.anoMes >= :dataInicio
               AND v.id.anoMes <= :dataFim

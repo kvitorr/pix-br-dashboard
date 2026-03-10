@@ -7,4 +7,6 @@ public interface SerieTemporalRegionalProjection {
     String getRegiao();
     Double getPenetracaoMedia();
     Double getTicketMedio();
+    Double getVlPerCapitaMedia();
+    Double getRazaoPjPfMedia();
 }
