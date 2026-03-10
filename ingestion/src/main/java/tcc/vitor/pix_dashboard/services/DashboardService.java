@@ -5,13 +5,16 @@ import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import tcc.vitor.pix_dashboard.database.models.VwIndicadoresMunicipio;
 import tcc.vitor.pix_dashboard.database.repositories.DashboardQueryRepository;
+import tcc.vitor.pix_dashboard.database.repositories.projections.MediaTemporalProjection;
 import tcc.vitor.pix_dashboard.database.repositories.projections.SerieTemporalRegionalProjection;
 import tcc.vitor.pix_dashboard.services.dto.dashboard.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -143,6 +146,67 @@ public class DashboardService {
                 ));
     }
 
+    public MunicipioSerieResponse getMunicipioSerie(
+            String municipioIbge, String dataInicio, String dataFim) {
+
+        LocalDate fim = parseMesOpcional(dataFim);
+        if (fim == null) fim = repository.findLatestAnoMes();
+
+        LocalDate inicio = parseMesOpcional(dataInicio);
+        if (inicio == null) inicio = fim.minusMonths(11);
+
+        List<VwIndicadoresMunicipio> serieMunicipio =
+                repository.findSerieMunicipio(municipioIbge, inicio, fim);
+
+        if (serieMunicipio.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Sem dados para o município: " + municipioIbge
+            );
+        }
+
+        String regiao = serieMunicipio.getFirst().getRegiao();
+        String siglaRegiao = serieMunicipio.getFirst().getSiglaRegiao();
+
+        Map<String, MediaTemporalProjection> mediasRegiao =
+                toMapPorMes(repository.findMediasRegionais(regiao, inicio, fim));
+        Map<String, MediaTemporalProjection> mediasNacional =
+                toMapPorMes(repository.findMediasNacionais(inicio, fim));
+
+        List<MunicipioSeriePontoDTO> serie = serieMunicipio.stream()
+                .map(m -> {
+                    String mes = ANO_MES_FORMATTER.format(m.getId().getAnoMes());
+                    MediaTemporalProjection mRegiao = mediasRegiao.get(mes);
+                    MediaTemporalProjection mNacional = mediasNacional.get(mes);
+                    return new MunicipioSeriePontoDTO(
+                            mes,
+                            round2(m.getPenetracaoPf()),
+                            round2(m.getTicketMedioPf()),
+                            round2(m.getVlPerCapitaPf()),
+                            round4(m.getRazaoPjPf()),
+                            mRegiao != null ? round2(mRegiao.getPenetracaoMedia()) : null,
+                            mRegiao != null ? round2(mRegiao.getTicketMedioMedia()) : null,
+                            mRegiao != null ? round2(mRegiao.getVlPerCapitaMedia()) : null,
+                            mRegiao != null ? round4(mRegiao.getRazaoPjPfMedia()) : null,
+                            mNacional != null ? round2(mNacional.getPenetracaoMedia()) : null,
+                            mNacional != null ? round2(mNacional.getTicketMedioMedia()) : null,
+                            mNacional != null ? round2(mNacional.getVlPerCapitaMedia()) : null,
+                            mNacional != null ? round4(mNacional.getRazaoPjPfMedia()) : null
+                    );
+                })
+                .toList();
+
+        return new MunicipioSerieResponse(regiao, siglaRegiao, serie);
+    }
+
+    private Map<String, MediaTemporalProjection> toMapPorMes(List<MediaTemporalProjection> list) {
+        return list.stream().collect(Collectors.toMap(
+                p -> ANO_MES_FORMATTER.format(p.getAnoMes()),
+                p -> p,
+                (a, b) -> a
+        ));
+    }
+
     // =========================================================================
     // Página 5 — Fatores Socioeconômicos
     // =========================================================================
@@ -222,6 +286,8 @@ public class DashboardService {
 
     private double roundD2(double v) { return Math.round(v * 100.0) / 100.0; }
     private double roundD4(double v) { return Math.round(v * 10000.0) / 10000.0; }
+    private Double round2(Double v) { return v == null ? null : Math.round(v * 100.0) / 100.0; }
+    private Double round4(Double v) { return v == null ? null : Math.round(v * 10000.0) / 10000.0; }
 
     // =========================================================================
     // Helpers privados

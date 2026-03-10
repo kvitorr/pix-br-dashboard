@@ -102,4 +102,21 @@ public interface DashboardApi {
             @Parameter(description = "Variável Y do scatter. Valores: penetracaoPf, ticketMedioPf, razaoPjPf, vlPerCapitaPf. Padrão: penetracaoPf.")
             @RequestParam(required = false, defaultValue = "penetracaoPf") String variavelY
     );
+
+    @Operation(
+            summary = "Série Temporal de Município",
+            description = "Retorna a evolução mensal das 4 métricas Pix do município, com benchmarks de média regional e nacional. Padrão: últimos 12 meses.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Dados retornados com sucesso"),
+                    @ApiResponse(responseCode = "404", description = "Município sem dados no período")
+            }
+    )
+    ResponseEntity<MunicipioSerieResponse> getMunicipioSerie(
+            @Parameter(description = "Código IBGE do município (7 dígitos)")
+            @PathVariable String municipioIbge,
+            @Parameter(description = "Início do período no formato YYYY-MM. Padrão: 11 meses antes do mês mais recente.")
+            @RequestParam(required = false) String dataInicio,
+            @Parameter(description = "Fim do período no formato YYYY-MM. Padrão: mês mais recente disponível.")
+            @RequestParam(required = false) String dataFim
+    );
 }

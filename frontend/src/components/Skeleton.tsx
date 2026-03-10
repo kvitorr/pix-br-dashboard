@@ -222,6 +222,10 @@ export function AnaliseMunicipalSkeleton() {
           </div>
         </div>
       </div>
+      {/* Temporal chart */}
+      <div className="mt-6">
+        <ChartCardSkeleton height={280} />
+      </div>
     </div>
   );
 }

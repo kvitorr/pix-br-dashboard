@@ -142,6 +142,29 @@ export interface EvolucaoTemporalResponse {
   ticketNacionalEvolucao: TicketNacional[];
 }
 
+// --- Série Temporal Municipal ---
+export interface MunicipioSeriePonto {
+  anoMes: string;
+  municipioPenetracaoPf: number | null;
+  municipioTicketMedioPf: number | null;
+  municipioVlPerCapitaPf: number | null;
+  municipioRazaoPjPf: number | null;
+  regiaoPenetracaoPf: number | null;
+  regiaoTicketMedioPf: number | null;
+  regiaoVlPerCapitaPf: number | null;
+  regiaoRazaoPjPf: number | null;
+  nacionalPenetracaoPf: number | null;
+  nacionalTicketMedioPf: number | null;
+  nacionalVlPerCapitaPf: number | null;
+  nacionalRazaoPjPf: number | null;
+}
+
+export interface MunicipioSerieResponse {
+  regiao: string;
+  siglaRegiao: string;
+  serie: MunicipioSeriePonto[];
+}
+
 // --- Fatores Socioeconômicos ---
 export interface ScatterMunicipio {
   municipioIbge: string;
