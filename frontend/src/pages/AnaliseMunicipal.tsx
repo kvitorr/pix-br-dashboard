@@ -117,31 +117,26 @@ export function AnaliseMunicipal() {
                 </div>
 
                 {/* Indicadores Socioeconômicos */}
-                <div className="bg-white rounded-card border border-border">
-                  <div className="px-[18px] py-[14px] border-b border-border-s">
-                    <h3 className="text-[13px] font-semibold text-main">Indicadores Socioeconômicos</h3>
-                  </div>
-                  <div className="px-[18px] py-[12px]">
-                    <div className="grid grid-cols-1 gap-3">
-                      <KpiCard
-                        title="PIB per Capita"
-                        value={data.pibPerCapita != null
-                          ? `R$ ${data.pibPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                          : '—'}
-                        subtitle="Produto Interno Bruto por habitante"
-                      />
-                      <KpiCard
-                        title="IDHM"
-                        value={data.idhm?.toFixed(4) ?? '—'}
-                        subtitle="Índice de Desenvolvimento Humano Municipal"
-                      />
-                      <KpiCard
-                        title="Taxa de Urbanização"
-                        value={data.taxaUrbanizacao?.toFixed(1) ?? '—'}
-                        unit="%"
-                        subtitle="Proporção da população urbana"
-                      />
-                    </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <KpiCard
+                    title="PIB per Capita"
+                    value={data.pibPerCapita != null
+                      ? `R$ ${data.pibPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : '—'}
+                    subtitle="Produto Interno Bruto por habitante"
+                  />
+                  <KpiCard
+                    title="Taxa de Urbanização"
+                    value={data.taxaUrbanizacao?.toFixed(1) ?? '—'}
+                    unit="%"
+                    subtitle="Proporção da população urbana"
+                  />
+                  <div className="col-span-2">
+                    <KpiCard
+                      title="IDHM"
+                      value={data.idhm?.toFixed(4) ?? '—'}
+                      subtitle="Índice de Desenvolvimento Humano Municipal"
+                    />
                   </div>
                 </div>
               </div>
