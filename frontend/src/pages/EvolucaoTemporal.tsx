@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell, CartesianGrid, ReferenceArea,
@@ -19,30 +19,40 @@ const METRICA_CONFIG: Record<MetricaEvolucao, {
   regiaoKey: keyof RegiaoPenetracao;
   yFormatter: (v: number) => string;
   tooltipFormatter: (v: number) => string;
+  variacaoFormatter: (v: number) => string;
+  variacaoLabel: string;
 }> = {
   penetracaoPf: {
     label: 'Penetração PF',
     regiaoKey: 'penetracaoMedia',
     yFormatter: (v) => `${v}%`,
     tooltipFormatter: (v) => `${Number(v).toFixed(1)}%`,
+    variacaoFormatter: (v) => `${v.toFixed(2)} pp`,
+    variacaoLabel: 'Variação (pp)',
   },
   ticketMedioPf: {
     label: 'Ticket Médio PF',
     regiaoKey: 'ticketMedio',
     yFormatter: (v) => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`,
     tooltipFormatter: (v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    variacaoFormatter: (v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    variacaoLabel: 'Variação (R$)',
   },
   vlPerCapitaPf: {
     label: 'Volume per Capita',
     regiaoKey: 'vlPerCapitaMedia',
     yFormatter: (v) => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`,
     tooltipFormatter: (v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    variacaoFormatter: (v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    variacaoLabel: 'Variação (R$)',
   },
   razaoPjPf: {
     label: 'Razão PJ/PF',
     regiaoKey: 'razaoPjPfMedia',
     yFormatter: (v) => v.toFixed(2),
     tooltipFormatter: (v) => Number(v).toFixed(4),
+    variacaoFormatter: (v) => Number(v).toFixed(4),
+    variacaoLabel: 'Variação',
   },
 };
 
@@ -83,6 +93,26 @@ export function EvolucaoTemporal() {
     });
     return obj;
   }) ?? [];
+
+  const crescimentoData = useMemo(() => {
+    if (!data?.serieTemporal.length) return [];
+    const primeiro = data.serieTemporal[0];
+    const ultimo = data.serieTemporal[data.serieTemporal.length - 1];
+
+    const primeiros = new Map(
+      primeiro.porRegiao.map(r => [r.regiao, r[metricaConfig.regiaoKey] as number | null])
+    );
+    const ultimos = new Map(
+      ultimo.porRegiao.map(r => [r.regiao, r[metricaConfig.regiaoKey] as number | null])
+    );
+
+    return Array.from(ultimos.entries())
+      .map(([reg, ultimoVal]) => ({
+        regiao: reg,
+        variacao: (ultimoVal ?? 0) - (primeiros.get(reg) ?? 0),
+      }))
+      .sort((a, b) => a.regiao.localeCompare(b.regiao));
+  }, [data?.serieTemporal, metricaConfig.regiaoKey]);
 
   const regioes = REGIONS.filter((r) => !regiao || r === regiao);
 
@@ -233,19 +263,26 @@ export function EvolucaoTemporal() {
                 </div>
                 <div className="px-[18px] py-[12px]">
                   <ResponsiveContainer width="100%" height={340}>
-                    <BarChart data={data.crescimentoAcumulado} margin={{ left: 10, right: 10 }}>
+                    <BarChart data={crescimentoData} margin={{ left: 10, right: 10 }}>
                       <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
-                      <YAxis unit=" pp" tick={{ fontSize: 10 }} />
+                      <YAxis
+                        tickFormatter={(v) => metricaConfig.variacaoFormatter(v)}
+                        tick={{ fontSize: 10 }}
+                        width={60}
+                      />
                       <Tooltip
-                        formatter={(v) => [`${Number(v).toFixed(1)} pp`, 'Variação']}
+                        formatter={(v) => [metricaConfig.variacaoFormatter(Number(v)), metricaConfig.variacaoLabel]}
                         contentStyle={TOOLTIP_STYLE.contentStyle}
                         labelStyle={TOOLTIP_STYLE.labelStyle}
                         itemStyle={TOOLTIP_STYLE.itemStyle}
                         cursor={TOOLTIP_STYLE.cursor}
                       />
-                      <Bar dataKey="variacaoPp" name="Crescimento (pp)" radius={[4, 4, 0, 0]}>
-                        {data.crescimentoAcumulado.map((entry) => (
-                          <Cell key={entry.regiao} fill={REGION_COLORS[entry.regiao] ?? '#64748b'} />
+                      <Bar dataKey="variacao" name={metricaConfig.variacaoLabel} radius={[4, 4, 0, 0]}>
+                        {crescimentoData.map((entry) => (
+                          <Cell
+                            key={entry.regiao}
+                            fill={REGION_COLORS[REGIAO_LABEL[entry.regiao] ?? entry.regiao] ?? '#64748b'}
+                          />
                         ))}
                       </Bar>
                     </BarChart>
