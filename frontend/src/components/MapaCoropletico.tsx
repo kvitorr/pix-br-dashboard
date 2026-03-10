@@ -19,6 +19,7 @@ interface MapaCoropléticoProps {
   metricFormato?: MetricFormato;
   height?: number;
   useAbsoluteScale?: boolean;
+  thresholds?: number[];
   showTileLayer?: boolean;
 }
 
@@ -43,6 +44,7 @@ export function MapaCoropletico({
   metricFormato = 'percent',
   height = 480,
   useAbsoluteScale = false,
+  thresholds: thresholdsProp,
   showTileLayer = false,
 }: MapaCoropléticoProps) {
   const mapRef = useRef<LeafletMap | null>(null);
@@ -111,29 +113,30 @@ export function MapaCoropletico({
           .filter((v): v is number => v != null)
           .sort((a, b) => a - b);
 
-        const ABSOLUTE_THRESHOLDS = [20, 40, 60, 80];
+        const absoluteThresholds = thresholdsProp ?? [20, 40, 60, 80];
         const thresholds = useAbsoluteScale
-          ? ABSOLUTE_THRESHOLDS
+          ? absoluteThresholds
           : [1, 2, 3, 4].map(q => values[Math.floor((q * values.length) / 5)] ?? 0);
         const dadosMap = new Map(municipios.map(m => [String(m.municipioIbge), m]));
 
         if (values.length > 0) {
+          const [t0, t1, t2, t3] = thresholds;
           if (useAbsoluteScale) {
             setLegendItems([
-              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: formatLegendValue(0, metricFormato) + ' a ' + formatLegendValue(20, metricFormato) },
-              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: formatLegendValue(20, metricFormato) + ' a ' + formatLegendValue(40, metricFormato) },
-              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: formatLegendValue(40, metricFormato) + ' a ' + formatLegendValue(60, metricFormato) },
-              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: formatLegendValue(60, metricFormato) + ' a ' + formatLegendValue(80, metricFormato) },
-              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: '> ' + formatLegendValue(80, metricFormato) },
+              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: formatLegendValue(0, metricFormato) + ' a ' + formatLegendValue(t0 ?? 0, metricFormato) },
+              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: formatLegendValue(t0 ?? 0, metricFormato) + ' a ' + formatLegendValue(t1 ?? 0, metricFormato) },
+              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: formatLegendValue(t1 ?? 0, metricFormato) + ' a ' + formatLegendValue(t2 ?? 0, metricFormato) },
+              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: formatLegendValue(t2 ?? 0, metricFormato) + ' a ' + formatLegendValue(t3 ?? 0, metricFormato) },
+              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: '> ' + formatLegendValue(t3 ?? 0, metricFormato) },
             ]);
           } else {
             const minVal = values[0] ?? 0;
             setLegendItems([
-              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: `${formatLegendValue(minVal, metricFormato)} a ${formatLegendValue(thresholds[0] ?? 0, metricFormato)}` },
-              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: `${formatLegendValue(thresholds[0] ?? 0, metricFormato)} a ${formatLegendValue(thresholds[1] ?? 0, metricFormato)}` },
-              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: `${formatLegendValue(thresholds[1] ?? 0, metricFormato)} a ${formatLegendValue(thresholds[2] ?? 0, metricFormato)}` },
-              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: `${formatLegendValue(thresholds[2] ?? 0, metricFormato)} a ${formatLegendValue(thresholds[3] ?? 0, metricFormato)}` },
-              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: `> ${formatLegendValue(thresholds[3] ?? 0, metricFormato)}` },
+              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: `${formatLegendValue(minVal, metricFormato)} a ${formatLegendValue(t0 ?? 0, metricFormato)}` },
+              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: `${formatLegendValue(t0 ?? 0, metricFormato)} a ${formatLegendValue(t1 ?? 0, metricFormato)}` },
+              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: `${formatLegendValue(t1 ?? 0, metricFormato)} a ${formatLegendValue(t2 ?? 0, metricFormato)}` },
+              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: `${formatLegendValue(t2 ?? 0, metricFormato)} a ${formatLegendValue(t3 ?? 0, metricFormato)}` },
+              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: `> ${formatLegendValue(t3 ?? 0, metricFormato)}` },
             ]);
           }
         }
@@ -290,7 +293,7 @@ export function MapaCoropletico({
     }
 
     return () => { isMounted = false; };
-  }, [municipios, metricKey, metricFormato, useAbsoluteScale]);
+  }, [municipios, metricKey, metricFormato, useAbsoluteScale, thresholdsProp]);
 
   return (
       <div className="relative rounded-xl overflow-hidden bg-slate-50" style={{ height: `${height}px`, width: '100%' }}>

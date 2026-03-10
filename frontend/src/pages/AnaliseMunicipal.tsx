@@ -12,11 +12,11 @@ import type { MetricaKey } from '../components/GraficoTemporalMunicipio';
 import type { MetricFormato } from '../components/MapaCoropletico';
 import type { MunicipioListItem } from '../types/dashboard';
 
-const VARIAVEIS_METRICA: Record<MetricaKey, { label: string; formato: MetricFormato }> = {
-  penetracaoPf:  { label: 'Penetração (%)',         formato: 'percent'  },
-  ticketMedioPf: { label: 'Ticket Médio (R$)',      formato: 'currency' },
-  vlPerCapitaPf: { label: 'Volume per Capita (R$)', formato: 'currency' },
-  razaoPjPf:     { label: 'Razão PJ/PF',            formato: 'decimal'  },
+const VARIAVEIS_METRICA: Record<MetricaKey, { label: string; formato: MetricFormato; thresholds: number[] }> = {
+  penetracaoPf:  { label: 'Penetração (%)',         formato: 'percent',  thresholds: [20, 40, 60, 80]          },
+  ticketMedioPf: { label: 'Ticket Médio (R$)',      formato: 'currency', thresholds: [100, 150, 200, 300]       },
+  vlPerCapitaPf: { label: 'Volume per Capita (R$)', formato: 'currency', thresholds: [500, 1000, 2000, 4000]    },
+  razaoPjPf:     { label: 'Razão PJ/PF',            formato: 'decimal',  thresholds: [0.05, 0.10, 0.20, 0.40]  },
 };
 
 const DEFAULT_MUNICIPIO: MunicipioListItem = {
@@ -112,6 +112,7 @@ export function AnaliseMunicipal() {
                       metricKey={metricaSelecionada}
                       metricLabel={metricaConfig.label}
                       metricFormato={metricaConfig.formato}
+                      thresholds={metricaConfig.thresholds}
                       height={440}
                       useAbsoluteScale={true}
                       showTileLayer={true}
