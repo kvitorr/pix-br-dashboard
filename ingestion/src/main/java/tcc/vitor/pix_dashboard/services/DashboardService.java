@@ -2,6 +2,7 @@ package tcc.vitor.pix_dashboard.services;
 
 import org.apache.commons.math3.distribution.TDistribution;
 import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -63,6 +64,8 @@ public class DashboardService {
     // Página 3 — Evolução Temporal
     // =========================================================================
 
+    @Cacheable(value = "evolucao-temporal",
+               key = "((#regiao != null && !#regiao.isBlank()) ? #regiao : 'ALL') + '-' + #dataInicio + '-' + #dataFim")
     public EvolucaoTemporalResponse getEvolucaoTemporal(String regiao, String dataInicio, String dataFim) {
         String regiaoParam = emptyToNull(regiao);
         LocalDate inicio = parseMesOpcional(dataInicio);
@@ -146,6 +149,8 @@ public class DashboardService {
                 ));
     }
 
+    @Cacheable(value = "municipio-serie",
+               key = "#municipioIbge + '-' + #dataInicio + '-' + #dataFim")
     public MunicipioSerieResponse getMunicipioSerie(
             String municipioIbge, String dataInicio, String dataFim) {
 
