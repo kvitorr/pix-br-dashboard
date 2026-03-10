@@ -44,14 +44,15 @@ public class DashboardService {
     // Página 2 — Disparidade Regional
     // =========================================================================
 
-    public DisparidadeRegionalResponse getDisparidadeRegional(String regiao, String anoMes) {
+    public DisparidadeRegionalResponse getDisparidadeRegional(String regiao, String anoMes, String metrica) {
         LocalDate data = resolveAnoMes(anoMes);
         String regiaoParam = emptyToNull(regiao);
+        String metricaParam = (metrica == null || metrica.isBlank()) ? "penetracaoPf" : metrica;
         return new DisparidadeRegionalResponse(
-                repository.findIqrPorRegiao(data, regiaoParam),
-                repository.findTop10(data, regiaoParam),
-                repository.findBottom10(data, regiaoParam),
-                repository.findMunicipiosAtipicos(data, regiaoParam)
+                repository.findIqrPorRegiao(data, regiaoParam, metricaParam),
+                repository.findTop10(data, regiaoParam, metricaParam),
+                repository.findBottom10(data, regiaoParam, metricaParam),
+                repository.findMunicipiosAtipicos(data, regiaoParam, metricaParam)
         );
     }
 
@@ -156,7 +157,7 @@ public class DashboardService {
         List<CorrelacaoSpearmanDTO> correlacoes = calcCorrelacoes(scatter, y);
         List<MunicipioRankingDTO> top10 = extractRanking(scatter, y, true);
         List<MunicipioRankingDTO> bottom10 = extractRanking(scatter, y, false);
-        List<MunicipioAtipicoDTO> atipicos = repository.findMunicipiosAtipicos(data, regiaoParam);
+        List<MunicipioAtipicoDTO> atipicos = repository.findMunicipiosAtipicos(data, regiaoParam, null);
 
         return new FatoresSocioeconomicosResponse(scatter, correlacoes, top10, bottom10, atipicos);
     }
@@ -197,7 +198,8 @@ public class DashboardService {
         Stream<ScatterMunicipioDTO> sorted = top ? filtered.sorted(cmp.reversed()) : filtered.sorted(cmp);
         return sorted.limit(10)
                 .map(m -> new MunicipioRankingDTO(
-                        m.municipioIbge(), m.municipio(), m.estado(), m.regiao(), "", m.penetracaoPf()))
+                        m.municipioIbge(), m.municipio(), m.estado(), m.regiao(), "",
+                        m.penetracaoPf(), m.ticketMedioPf(), m.razaoPjPf(), m.vlPerCapitaPf()))
                 .toList();
     }
 

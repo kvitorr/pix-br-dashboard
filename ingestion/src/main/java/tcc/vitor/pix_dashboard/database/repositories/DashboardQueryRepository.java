@@ -1,7 +1,6 @@
 package tcc.vitor.pix_dashboard.database.repositories;
 
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import tcc.vitor.pix_dashboard.database.models.VwIndicadoresMunicipio;
 import tcc.vitor.pix_dashboard.database.repositories.projections.*;
@@ -86,13 +85,14 @@ public class DashboardQueryRepository {
     // Disparidade Regional
     // =========================================================================
 
-    public List<IqrRegiaoDTO> findIqrPorRegiao(LocalDate anoMes, String regiao) {
+    public List<IqrRegiaoDTO> findIqrPorRegiao(LocalDate anoMes, String regiao, String metrica) {
         List<PenetracaoBrutaProjection> bruta = indicadoresRepo.findPenetracaoBruta(anoMes, regiao);
 
         Map<String, List<Double>> porRegiao = bruta.stream()
+                .filter(p -> getMetricaValueFromBruta(p, metrica) != null)
                 .collect(Collectors.groupingBy(
                         PenetracaoBrutaProjection::getRegiao,
-                        Collectors.mapping(PenetracaoBrutaProjection::getPenetracaoPf, Collectors.toList())
+                        Collectors.mapping(p -> getMetricaValueFromBruta(p, metrica), Collectors.toList())
                 ));
 
         return porRegiao.entrySet().stream()
@@ -110,31 +110,40 @@ public class DashboardQueryRepository {
                 .toList();
     }
 
-    public List<MunicipioRankingDTO> findTop10(LocalDate anoMes, String regiao) {
-        return indicadoresRepo.findTopMunicipios(anoMes, regiao, PageRequest.of(0, 10))
-                .stream()
+    public List<MunicipioRankingDTO> findTop10(LocalDate anoMes, String regiao, String metrica) {
+        return indicadoresRepo.findAllForScatter(anoMes, regiao).stream()
+                .filter(m -> getMetricaValueFromEntity(m, metrica) != null)
+                .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
+                        getMetricaValueFromEntity(m, metrica)).reversed())
+                .limit(10)
                 .map(this::toRankingDTO)
                 .toList();
     }
 
-    public List<MunicipioRankingDTO> findBottom10(LocalDate anoMes, String regiao) {
-        return indicadoresRepo.findBottomMunicipios(anoMes, regiao, PageRequest.of(0, 10))
-                .stream()
+    public List<MunicipioRankingDTO> findBottom10(LocalDate anoMes, String regiao, String metrica) {
+        return indicadoresRepo.findAllForScatter(anoMes, regiao).stream()
+                .filter(m -> getMetricaValueFromEntity(m, metrica) != null)
+                .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
+                        getMetricaValueFromEntity(m, metrica)))
+                .limit(10)
                 .map(this::toRankingDTO)
                 .toList();
     }
 
     @Cacheable(
             value = "municipiosAtipicos",
-            key = "#anoMes.toString() + '_' + (#regiao != null ? #regiao : 'ALL')",
+            key = "#anoMes.toString() + '_' + (#regiao != null ? #regiao : 'ALL') + '_' + (#metrica != null ? #metrica : 'penetracaoPf')",
             condition = "#anoMes.isBefore(T(java.time.LocalDate).now().withDayOfMonth(1))"
     )
-    public List<MunicipioAtipicoDTO> findMunicipiosAtipicos(LocalDate anoMes, String regiao) {
-        List<VwIndicadoresMunicipio> municipios = indicadoresRepo.findAllWithPibAndPenetracao(anoMes, regiao);
+    public List<MunicipioAtipicoDTO> findMunicipiosAtipicos(LocalDate anoMes, String regiao, String metrica) {
+        List<VwIndicadoresMunicipio> municipios = indicadoresRepo.findAllWithPib(anoMes, regiao).stream()
+                .filter(m -> getMetricaValueFromEntity(m, metrica) != null)
+                .toList();
+
         if (municipios.isEmpty()) return List.of();
 
-        List<Double> sortedPen = municipios.stream()
-                .map(VwIndicadoresMunicipio::getPenetracaoPf)
+        List<Double> sortedMetrica = municipios.stream()
+                .map(m -> getMetricaValueFromEntity(m, metrica))
                 .sorted()
                 .toList();
         List<Double> sortedPib = municipios.stream()
@@ -142,34 +151,49 @@ public class DashboardQueryRepository {
                 .sorted()
                 .toList();
 
-        double medianaPen = percentileCont(sortedPen, 0.50);
+        double medianaMetrica = percentileCont(sortedMetrica, 0.50);
         double medianaPib = percentileCont(sortedPib, 0.50);
 
+        String tagAcima = getTagAcima(metrica);
+        String tagAbaixo = getTagAbaixo(metrica);
+
         List<MunicipioAtipicoDTO> altaAdocaoBaixoPib = municipios.stream()
-                .filter(m -> m.getPenetracaoPf() > medianaPen && m.getPibPerCapita() < medianaPib)
+                .filter(m -> getMetricaValueFromEntity(m, metrica) > medianaMetrica
+                        && m.getPibPerCapita() < medianaPib)
                 .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
-                        (m.getPenetracaoPf() / medianaPen) - (m.getPibPerCapita() / medianaPib)).reversed())
+                        (getMetricaValueFromEntity(m, metrica) / medianaMetrica)
+                                - (m.getPibPerCapita() / medianaPib)).reversed())
                 .limit(5)
                 .map(m -> new MunicipioAtipicoDTO(
                         m.getId().getMunicipioIbge(), m.getMunicipio(), m.getEstado(),
                         m.getRegiao(), m.getSiglaRegiao(),
-                        round2(m.getPenetracaoPf()), round2(m.getPibPerCapita()),
+                        round2(m.getPenetracaoPf()),
+                        round2(m.getTicketMedioPf()),
+                        round4(m.getRazaoPjPf()),
+                        round2(m.getVlPerCapitaPf()),
+                        round2(m.getPibPerCapita()),
                         "alta-adocao-baixo-pib",
-                        List.of("PIB baixo", "Penetração acima da média")
+                        List.of("PIB baixo", tagAcima)
                 ))
                 .toList();
 
         List<MunicipioAtipicoDTO> baixaAdocaoAltoPib = municipios.stream()
-                .filter(m -> m.getPenetracaoPf() < medianaPen && m.getPibPerCapita() > medianaPib)
+                .filter(m -> getMetricaValueFromEntity(m, metrica) < medianaMetrica
+                        && m.getPibPerCapita() > medianaPib)
                 .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
-                        (m.getPibPerCapita() / medianaPib) - (m.getPenetracaoPf() / medianaPen)).reversed())
+                        (m.getPibPerCapita() / medianaPib)
+                                - (getMetricaValueFromEntity(m, metrica) / medianaMetrica)).reversed())
                 .limit(5)
                 .map(m -> new MunicipioAtipicoDTO(
                         m.getId().getMunicipioIbge(), m.getMunicipio(), m.getEstado(),
                         m.getRegiao(), m.getSiglaRegiao(),
-                        round2(m.getPenetracaoPf()), round2(m.getPibPerCapita()),
+                        round2(m.getPenetracaoPf()),
+                        round2(m.getTicketMedioPf()),
+                        round4(m.getRazaoPjPf()),
+                        round2(m.getVlPerCapitaPf()),
+                        round2(m.getPibPerCapita()),
                         "baixa-adocao-alto-pib",
-                        List.of("PIB alto", "Penetração abaixo do esperado")
+                        List.of("PIB alto", tagAbaixo)
                 ))
                 .toList();
 
@@ -214,7 +238,7 @@ public class DashboardQueryRepository {
     }
 
     public List<MunicipioListItemDTO> searchMunicipios(String nome, int limit) {
-        return indicadoresRepo.searchByName(nome, PageRequest.of(0, limit)).stream()
+        return indicadoresRepo.searchByName(nome, org.springframework.data.domain.PageRequest.of(0, limit)).stream()
                 .map(p -> new MunicipioListItemDTO(
                         p.getMunicipioIbge(), p.getMunicipio(), p.getEstado(),
                         p.getRegiao(), p.getSiglaRegiao()
@@ -250,10 +274,50 @@ public class DashboardQueryRepository {
     // Helpers privados
     // =========================================================================
 
-    private MunicipioRankingDTO toRankingDTO(MunicipioRankingProjection p) {
+    private Double getMetricaValueFromBruta(PenetracaoBrutaProjection p, String metrica) {
+        return switch (metrica != null ? metrica : "penetracaoPf") {
+            case "ticketMedioPf" -> p.getTicketMedioPf();
+            case "razaoPjPf"     -> p.getRazaoPjPf();
+            case "vlPerCapitaPf" -> p.getVlPerCapitaPf();
+            default              -> p.getPenetracaoPf();
+        };
+    }
+
+    private Double getMetricaValueFromEntity(VwIndicadoresMunicipio m, String metrica) {
+        return switch (metrica != null ? metrica : "penetracaoPf") {
+            case "ticketMedioPf" -> m.getTicketMedioPf();
+            case "razaoPjPf"     -> m.getRazaoPjPf();
+            case "vlPerCapitaPf" -> m.getVlPerCapitaPf();
+            default              -> m.getPenetracaoPf();
+        };
+    }
+
+    private String getTagAcima(String metrica) {
+        return switch (metrica != null ? metrica : "penetracaoPf") {
+            case "ticketMedioPf" -> "Ticket Médio acima da média";
+            case "razaoPjPf"     -> "Razão PJ/PF acima da média";
+            case "vlPerCapitaPf" -> "Per Capita acima da média";
+            default              -> "Penetração acima da média";
+        };
+    }
+
+    private String getTagAbaixo(String metrica) {
+        return switch (metrica != null ? metrica : "penetracaoPf") {
+            case "ticketMedioPf" -> "Ticket Médio abaixo do esperado";
+            case "razaoPjPf"     -> "Razão PJ/PF abaixo do esperado";
+            case "vlPerCapitaPf" -> "Per Capita abaixo do esperado";
+            default              -> "Penetração abaixo do esperado";
+        };
+    }
+
+    private MunicipioRankingDTO toRankingDTO(VwIndicadoresMunicipio m) {
         return new MunicipioRankingDTO(
-                p.getMunicipioIbge(), p.getMunicipio(), p.getEstado(),
-                p.getRegiao(), p.getSiglaRegiao(), p.getPenetracaoPf()
+                m.getId().getMunicipioIbge(), m.getMunicipio(), m.getEstado(),
+                m.getRegiao(), m.getSiglaRegiao(),
+                round2(m.getPenetracaoPf()),
+                round2(m.getTicketMedioPf()),
+                round4(m.getRazaoPjPf()),
+                round2(m.getVlPerCapitaPf())
         );
     }
 

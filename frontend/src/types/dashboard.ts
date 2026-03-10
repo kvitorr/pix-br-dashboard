@@ -56,6 +56,9 @@ export interface MunicipioRanking {
   regiao: string;
   siglaRegiao: string;
   penetracaoPf: number | null;
+  ticketMedioPf: number | null;
+  razaoPjPf: number | null;
+  vlPerCapitaPf: number | null;
 }
 
 export interface MunicipioAtipico {
@@ -65,6 +68,9 @@ export interface MunicipioAtipico {
   regiao: string;
   siglaRegiao: string;
   penetracaoPf: number | null;
+  ticketMedioPf: number | null;
+  razaoPjPf: number | null;
+  vlPerCapitaPf: number | null;
   pibPerCapita: number | null;
   tipo: 'alta-adocao-baixo-pib' | 'baixa-adocao-alto-pib';
   tags: string[];

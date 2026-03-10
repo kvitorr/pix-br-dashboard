@@ -6,5 +6,8 @@ public record MunicipioRankingDTO(
         String estado,
         String regiao,
         String siglaRegiao,
-        Double penetracaoPf
+        Double penetracaoPf,
+        Double ticketMedioPf,
+        Double razaoPjPf,
+        Double vlPerCapitaPf
 ) {}

@@ -35,7 +35,9 @@ public interface DashboardApi {
             @Parameter(description = "Filtro por região")
             @RequestParam(required = false) String regiao,
             @Parameter(description = "Mês de referência no formato YYYY-MM. Padrão: mês mais recente.")
-            @RequestParam(required = false) String anoMes
+            @RequestParam(required = false) String anoMes,
+            @Parameter(description = "Métrica a exibir. Valores: penetracaoPf, ticketMedioPf, razaoPjPf, vlPerCapitaPf. Padrão: penetracaoPf.")
+            @RequestParam(required = false, defaultValue = "penetracaoPf") String metrica
     );
 
     @Operation(

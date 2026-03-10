@@ -75,15 +75,27 @@ public interface VwIndicadoresMunicipioRepository
             @Param("regiao") String regiao);
 
     @Query("""
-            SELECT v.regiao        AS regiao,
-                   v.penetracaoPf  AS penetracaoPf
+            SELECT v.regiao           AS regiao,
+                   v.penetracaoPf     AS penetracaoPf,
+                   v.ticketMedioPf    AS ticketMedioPf,
+                   v.razaoPjPf        AS razaoPjPf,
+                   v.vlPerCapitaPf    AS vlPerCapitaPf
             FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes = :anoMes
               AND (:regiao IS NULL OR v.regiao = :regiao)
-              AND v.penetracaoPf IS NOT NULL
-            ORDER BY v.regiao, v.penetracaoPf
+            ORDER BY v.regiao
             """)
     List<PenetracaoBrutaProjection> findPenetracaoBruta(
+            @Param("anoMes") LocalDate anoMes,
+            @Param("regiao") String regiao);
+
+    @Query("""
+            SELECT v FROM VwIndicadoresMunicipio v
+            WHERE v.id.anoMes = :anoMes
+              AND (:regiao IS NULL OR v.regiao = :regiao)
+              AND v.pibPerCapita IS NOT NULL
+            """)
+    List<VwIndicadoresMunicipio> findAllWithPib(
             @Param("anoMes") LocalDate anoMes,
             @Param("regiao") String regiao);
 

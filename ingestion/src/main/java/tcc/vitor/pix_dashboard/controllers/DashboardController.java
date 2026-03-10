@@ -29,8 +29,9 @@ public class DashboardController implements DashboardApi {
     @GetMapping("/disparidade-regional")
     public ResponseEntity<DisparidadeRegionalResponse> getDisparidadeRegional(
             @RequestParam(required = false) String regiao,
-            @RequestParam(required = false) String anoMes) {
-        return ResponseEntity.ok(dashboardService.getDisparidadeRegional(regiao, anoMes));
+            @RequestParam(required = false) String anoMes,
+            @RequestParam(required = false, defaultValue = "penetracaoPf") String metrica) {
+        return ResponseEntity.ok(dashboardService.getDisparidadeRegional(regiao, anoMes, metrica));
     }
 
     @Override
