@@ -72,6 +72,10 @@ const METRICAS: Record<MetricaKey, MetricaConfig> = {
   },
 };
 
+function toYearMonth(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function formatarMes(anoMes: string): string {
   if (!anoMes || !anoMes.includes('-')) return anoMes;
   const [ano, mes] = anoMes.split('-');
@@ -87,8 +91,12 @@ interface Props {
 }
 
 export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaSelecionada }: Props) {
-  const [dataInicio, setDataInicio] = useState<string | null>(null);
-  const [dataFim, setDataFim] = useState<string | null>(null);
+  const [dataInicio, setDataInicio] = useState<string>(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 11);
+    return toYearMonth(d);
+  });
+  const [dataFim, setDataFim] = useState<string>(() => toYearMonth(new Date()));
 
   const { data, loading, error } = useMunicipioSerie(ibge, dataInicio, dataFim);
   const showSkeleton = useDelayedLoading(loading);
@@ -118,8 +126,8 @@ export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaS
             <label className="text-[12px] text-secondary whitespace-nowrap">De:</label>
             <input
               type="month"
-              value={dataInicio ?? ''}
-              onChange={(e) => setDataInicio(e.target.value || null)}
+              value={dataInicio}
+              onChange={(e) => setDataInicio(e.target.value)}
               className="border border-border rounded-input px-2 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
@@ -127,8 +135,8 @@ export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaS
             <label className="text-[12px] text-secondary whitespace-nowrap">Até:</label>
             <input
               type="month"
-              value={dataFim ?? ''}
-              onChange={(e) => setDataFim(e.target.value || null)}
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
               className="border border-border rounded-input px-2 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
