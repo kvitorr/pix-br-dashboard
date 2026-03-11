@@ -132,7 +132,11 @@ function RankingMunicipiosCard({
           <tbody>
             {items.map((m, i) => {
               const val = getMetricValue(m, metricaConfig.value);
-              const barWidth = val != null ? Math.min(100, (val / maxVal) * 100) : 0;
+              const barWidth = val != null
+                ? metricaConfig.formato === 'percent'
+                  ? Math.min(100, val)
+                  : Math.min(100, (val / maxVal) * 100)
+                : 0;
               return (
                 <tr key={m.municipioIbge} className="border-b border-border-s last:border-0">
                   <td className="py-2 text-muted font-mono text-[12px] w-6">{i + 1}</td>
