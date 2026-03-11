@@ -123,6 +123,7 @@ function RankingMunicipiosCard({
               <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">#</th>
               <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">Município</th>
               <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">Estado</th>
+              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted w-32">Barra</th>
               <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted text-right">
                 {metricaConfig.label}
               </th>
@@ -137,17 +138,19 @@ function RankingMunicipiosCard({
                   <td className="py-2 text-muted font-mono text-[12px] w-6">{i + 1}</td>
                   <td className="py-2 pr-2">
                     <span className="font-medium text-main text-[13px]">{m.municipio}</span>
-                    <div className={`mt-1 h-1 rounded-full ${isTop ? 'bg-pos-bg' : 'bg-accent-bg'}`}>
-                      <div
-                        className={`h-1 rounded-full ${isTop ? 'bg-pos' : 'bg-accent'}`}
-                        style={{ width: `${barWidth}%` }}
-                      />
-                    </div>
                   </td>
                   <td className="py-2">
                     <span className="inline-block bg-subtle border border-border rounded px-1.5 py-0.5 text-[11px] font-medium text-secondary">
                       {m.estado}
                     </span>
+                  </td>
+                  <td className="py-2 w-32 pr-3">
+                    <div className={`h-1.5 rounded-full ${isTop ? 'bg-pos-bg' : 'bg-accent-bg'}`}>
+                      <div
+                        className={`h-1.5 rounded-full ${isTop ? 'bg-pos' : 'bg-accent'}`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
                   </td>
                   <td className="py-2 text-right font-semibold text-[13px] text-main">
                     {formatMetric(val, metricaConfig.formato)}
@@ -373,7 +376,7 @@ export function VisaoGeral() {
                     <BarChart
                       data={data.penetracaoPorRegiao}
                       layout="vertical"
-                      margin={{ left: 60, right: 20 }}
+                      margin={{ left: 5, right: 10 }}
                     >
                       <XAxis
                         type="number"
