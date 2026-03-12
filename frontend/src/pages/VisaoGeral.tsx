@@ -12,9 +12,9 @@ import { ErrorState } from '../components/ErrorState';
 import { VisaoGeralSkeleton } from '../components/Skeleton';
 import { MapaCoropletico } from '../components/MapaCoropletico';
 import type { MetricFormato } from '../components/MapaCoropletico';
-import { REGION_COLORS, TOOLTIP_STYLE } from '../constants/colors';
+import { REGION_COLORS, REGIONS, TOOLTIP_STYLE } from '../constants/colors';
 import { useDelayedLoading } from '../hooks/useDelayedLoading';
-import type { MapaMunicipio, MunicipioAtipico, MunicipioRanking, PenetracaoRegiao } from '../types/dashboard';
+import type { MapaMunicipio, MunicipioAtipico, MunicipioRanking, PenetracaoRegiao, RegiaoPenetracao } from '../types/dashboard';
 
 // ─── Configuração das métricas ────────────────────────────────────────────────
 
@@ -32,6 +32,50 @@ const VARIAVEIS_MAPA: Array<{
 ];
 
 type MetricaConfig = (typeof VARIAVEIS_MAPA)[number];
+
+type MetricaEvolucao = 'penetracaoPf' | 'ticketMedioPf' | 'vlPerCapitaPf' | 'razaoPjPf';
+
+const METRICA_EVOLUCAO_CONFIG: Record<MetricaEvolucao, {
+  label: string;
+  regiaoKey: keyof RegiaoPenetracao;
+  yFormatter: (v: number) => string;
+  tooltipFormatter: (v: number) => string;
+  variacaoFormatter: (v: number) => string;
+  variacaoLabel: string;
+}> = {
+  penetracaoPf: {
+    label: 'Penetração PF',
+    regiaoKey: 'penetracaoMedia',
+    yFormatter: (v) => `${v}%`,
+    tooltipFormatter: (v) => `${Number(v).toFixed(1)}%`,
+    variacaoFormatter: (v) => `${v.toFixed(2)} pp`,
+    variacaoLabel: 'Variação (pp)',
+  },
+  ticketMedioPf: {
+    label: 'Ticket Médio PF',
+    regiaoKey: 'ticketMedio',
+    yFormatter: (v) => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`,
+    tooltipFormatter: (v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    variacaoFormatter: (v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    variacaoLabel: 'Variação (R$)',
+  },
+  vlPerCapitaPf: {
+    label: 'Volume per Capita',
+    regiaoKey: 'vlPerCapitaMedia',
+    yFormatter: (v) => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`,
+    tooltipFormatter: (v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    variacaoFormatter: (v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    variacaoLabel: 'Variação (R$)',
+  },
+  razaoPjPf: {
+    label: 'Razão PJ/PF',
+    regiaoKey: 'razaoPjPfMedia',
+    yFormatter: (v) => v.toFixed(2),
+    tooltipFormatter: (v) => Number(v).toFixed(4),
+    variacaoFormatter: (v) => Number(v).toFixed(4),
+    variacaoLabel: 'Variação',
+  },
+};
 
 // ─── Mapeamento de capitalização das regiões (API retorna maiúsculas) ─────────
 
@@ -289,35 +333,43 @@ export function VisaoGeral() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
   const [metricaIdx, setMetricaIdx] = useState(0);
+  const [regiaoEvolucao, setRegiaoEvolucao] = useState<string | null>(null);
+  const [dataFimEvolucao, setDataFimEvolucao] = useState<string | null>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [dataInicioEvolucao, setDataInicioEvolucao] = useState<string | null>(() => {
+    const d = new Date();
+    return addMonthsToYearMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, -11);
+  });
+  const [metricaEvolucao, setMetricaEvolucao] = useState<MetricaEvolucao>('penetracaoPf');
   const metricaConfig = VARIAVEIS_MAPA[metricaIdx] ?? VARIAVEIS_MAPA[0]!;
+  const metricaEvolucaoConfig = METRICA_EVOLUCAO_CONFIG[metricaEvolucao];
 
   const { data, loading, error } = useVisaoGeral(regiao, anoMes);
   const showSkeleton = useDelayedLoading(loading);
   const { data: dispData } = useDisparidadeRegional(regiao, anoMes, metricaConfig.value);
-  const dataInicioEvolucao = useMemo(
-    () => (anoMes ? addMonthsToYearMonth(anoMes, -11) : null),
-    [anoMes],
-  );
-  const { data: evolucaoData } = useEvolucaoTemporal(regiao, dataInicioEvolucao, anoMes);
+  const { data: evolucaoData } = useEvolucaoTemporal(regiaoEvolucao, dataInicioEvolucao, dataFimEvolucao);
 
   const evolucaoPenetracaoData = useMemo(() => (
     evolucaoData?.serieTemporal.map((ponto) => {
       const obj: Record<string, string | number> = { anoMes: ponto.anoMes };
       ponto.porRegiao.forEach((r) => {
         const key = REGIAO_LABEL[r.regiao] ?? r.regiao;
-        if (r.penetracaoMedia != null) obj[key] = r.penetracaoMedia;
+        const value = r[metricaEvolucaoConfig.regiaoKey];
+        if (value != null) obj[key] = value;
       });
       return obj;
     }) ?? []
-  ), [evolucaoData?.serieTemporal]);
+  ), [evolucaoData?.serieTemporal, metricaEvolucaoConfig.regiaoKey]);
 
   const crescimentoAcumuladoRegiaoData = useMemo(() => {
     if (!evolucaoData?.serieTemporal.length) return [];
     const primeiro = evolucaoData.serieTemporal[0];
     const ultimo = evolucaoData.serieTemporal[evolucaoData.serieTemporal.length - 1];
 
-    const primeiros = new Map(primeiro.porRegiao.map((r) => [r.regiao, r.penetracaoMedia]));
-    const ultimos = new Map(ultimo.porRegiao.map((r) => [r.regiao, r.penetracaoMedia]));
+    const primeiros = new Map(primeiro.porRegiao.map((r) => [r.regiao, r[metricaEvolucaoConfig.regiaoKey] as number | null]));
+    const ultimos = new Map(ultimo.porRegiao.map((r) => [r.regiao, r[metricaEvolucaoConfig.regiaoKey] as number | null]));
 
     return Array.from(ultimos.entries())
       .map(([regiaoNome, ultimoValor]) => ({
@@ -325,11 +377,11 @@ export function VisaoGeral() {
         variacao: (ultimoValor ?? 0) - (primeiros.get(regiaoNome) ?? 0),
       }))
       .sort((a, b) => a.regiao.localeCompare(b.regiao));
-  }, [evolucaoData?.serieTemporal]);
+  }, [evolucaoData?.serieTemporal, metricaEvolucaoConfig.regiaoKey]);
 
   const regioesAtivas = useMemo(
-    () => Object.values(REGIAO_LABEL).filter((r) => !regiao || r === regiao),
-    [regiao],
+    () => REGIONS.filter((r) => !regiaoEvolucao || r === regiaoEvolucao),
+    [regiaoEvolucao],
   );
 
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
@@ -578,12 +630,60 @@ export function VisaoGeral() {
               </div>
 
               {/* Evolução Regional */}
-              {evolucaoData && (
-                <div className="flex flex-col lg:flex-row gap-6 mt-6">
-                  <div className="flex-[3] bg-white rounded-card border border-border">
+              <div className="mt-6">
+                  <div className="bg-white rounded-card border border-border mb-4 px-[18px] py-[12px]">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[12px] font-medium text-main">Região</label>
+                        <select
+                          value={regiaoEvolucao ?? ''}
+                          onChange={(e) => setRegiaoEvolucao(e.target.value || null)}
+                          className="border border-border rounded-input px-2.5 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="">Todas</option>
+                          {REGIONS.map((r) => (
+                            <option key={r} value={r}>{r}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[12px] font-medium text-main">Data início</label>
+                        <input
+                          type="month"
+                          value={dataInicioEvolucao ?? ''}
+                          onChange={(e) => setDataInicioEvolucao(e.target.value || null)}
+                          className="border border-border rounded-input px-2.5 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[12px] font-medium text-main">Data fim</label>
+                        <input
+                          type="month"
+                          value={dataFimEvolucao ?? ''}
+                          onChange={(e) => setDataFimEvolucao(e.target.value || null)}
+                          className="border border-border rounded-input px-2.5 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1 min-w-[180px]">
+                        <label className="text-[12px] font-medium text-main">Métrica</label>
+                        <select
+                          value={metricaEvolucao}
+                          onChange={(e) => setMetricaEvolucao(e.target.value as MetricaEvolucao)}
+                          className="border border-border rounded-input px-2.5 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          {(Object.keys(METRICA_EVOLUCAO_CONFIG) as MetricaEvolucao[]).map((k) => (
+                            <option key={k} value={k}>{METRICA_EVOLUCAO_CONFIG[k].label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="lg:col-span-3 bg-white rounded-card border border-border">
                     <div className="px-[18px] py-[14px] border-b border-border-s">
-                      <h2 className="text-[13px] font-semibold text-main">Evolução por Região — Penetração PF</h2>
-                      <p className="text-xs text-muted mt-0.5">Últimos 12 meses</p>
+                      <h2 className="text-[13px] font-semibold text-main">Evolução por Região — {metricaEvolucaoConfig.label}</h2>
+                      <p className="text-xs text-muted mt-0.5">Faixa selecionada</p>
                     </div>
                     <div className="px-[18px] py-[12px]">
                       <ResponsiveContainer width="100%" height={320}>
@@ -596,7 +696,7 @@ export function VisaoGeral() {
                             angle={-30}
                             textAnchor="end"
                           />
-                          <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10 }} domain={['auto', 'auto']} />
+                          <YAxis tickFormatter={metricaEvolucaoConfig.yFormatter} tick={{ fontSize: 10 }} domain={['auto', 'auto']} />
                           <Tooltip
                             labelFormatter={(label) => {
                               const suffix = hasPartialMonth && label === currentMonth
@@ -604,7 +704,7 @@ export function VisaoGeral() {
                                 : '';
                               return `${label}${suffix}`;
                             }}
-                            formatter={(v, name) => [`${Number(v).toFixed(1)}%`, name]}
+                            formatter={(v, name) => [metricaEvolucaoConfig.tooltipFormatter(Number(v)), name]}
                             contentStyle={TOOLTIP_STYLE.contentStyle}
                             labelStyle={TOOLTIP_STYLE.labelStyle}
                             itemStyle={TOOLTIP_STYLE.itemStyle}
@@ -637,24 +737,24 @@ export function VisaoGeral() {
                     </div>
                   </div>
 
-                  <div className="flex-[2] bg-white rounded-card border border-border">
+                    <div className="lg:col-span-1 bg-white rounded-card border border-border">
                     <div className="px-[18px] py-[14px] border-b border-border-s">
                       <h2 className="text-[13px] font-semibold text-main">Crescimento Acumulado por Região</h2>
-                      <p className="text-xs text-muted mt-0.5">Variação de penetração no período (pp)</p>
+                      <p className="text-xs text-muted mt-0.5">{metricaEvolucaoConfig.variacaoLabel} no período</p>
                     </div>
                     <div className="px-[18px] py-[12px]">
                       <ResponsiveContainer width="100%" height={320}>
                         <BarChart data={crescimentoAcumuladoRegiaoData} margin={{ left: 10, right: 10 }}>
                           <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
-                          <YAxis tickFormatter={(v) => `${Number(v).toFixed(2)} pp`} tick={{ fontSize: 10 }} width={70} />
+                          <YAxis tickFormatter={(v) => metricaEvolucaoConfig.variacaoFormatter(Number(v))} tick={{ fontSize: 10 }} width={80} />
                           <Tooltip
-                            formatter={(v) => [`${Number(v).toFixed(2)} pp`, 'Variação (pp)']}
+                            formatter={(v) => [metricaEvolucaoConfig.variacaoFormatter(Number(v)), metricaEvolucaoConfig.variacaoLabel]}
                             contentStyle={TOOLTIP_STYLE.contentStyle}
                             labelStyle={TOOLTIP_STYLE.labelStyle}
                             itemStyle={TOOLTIP_STYLE.itemStyle}
                             cursor={TOOLTIP_STYLE.cursor}
                           />
-                          <Bar dataKey="variacao" name="Variação (pp)" radius={[4, 4, 0, 0]}>
+                          <Bar dataKey="variacao" name={metricaEvolucaoConfig.variacaoLabel} radius={[4, 4, 0, 0]}>
                             {crescimentoAcumuladoRegiaoData.map((entry) => (
                               <Cell
                                 key={entry.regiao}
@@ -667,7 +767,7 @@ export function VisaoGeral() {
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </>
           )}
 
