@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Navbar';
 import { VisaoGeral } from './pages/VisaoGeral';
-import { EvolucaoTemporal } from './pages/EvolucaoTemporal';
 import { AnaliseMunicipal } from './pages/AnaliseMunicipal';
 import { FatoresSocioeconomicos } from './pages/FatoresSocioeconomicos';
 
@@ -14,7 +13,6 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/visao-geral" replace />} />
             <Route path="/visao-geral" element={<VisaoGeral />} />
-            <Route path="/evolucao-temporal" element={<EvolucaoTemporal />} />
             <Route path="/analise-municipal" element={<AnaliseMunicipal />} />
             <Route path="/fatores-socioeconomicos" element={<FatoresSocioeconomicos />} />
           </Routes>

@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  LineChart, Line, CartesianGrid, ReferenceArea,
 } from 'recharts';
 import { useVisaoGeral } from '../hooks/useVisaoGeral';
 import { useDisparidadeRegional } from '../hooks/useDisparidadeRegional';
+import { useEvolucaoTemporal } from '../hooks/useEvolucaoTemporal';
 import { KpiCard } from '../components/KpiCard';
 import { FilterBar } from '../components/FilterBar';
 import { ErrorState } from '../components/ErrorState';
@@ -64,6 +66,14 @@ function stddevUnit(formato: MetricFormato): string {
   if (formato === 'percent') return 'pp';
   if (formato === 'currency') return 'R$';
   return '';
+}
+
+function addMonthsToYearMonth(anoMes: string, monthDelta: number): string {
+  const [year, month] = anoMes.split('-').map(Number);
+  if (!year || !month) return anoMes;
+  const date = new Date(year, month - 1, 1);
+  date.setMonth(date.getMonth() + monthDelta);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
 // ─── RankingMunicipiosCard ────────────────────────────────────────────────────
@@ -284,6 +294,69 @@ export function VisaoGeral() {
   const { data, loading, error } = useVisaoGeral(regiao, anoMes);
   const showSkeleton = useDelayedLoading(loading);
   const { data: dispData } = useDisparidadeRegional(regiao, anoMes, metricaConfig.value);
+  const dataInicioEvolucao = useMemo(
+    () => (anoMes ? addMonthsToYearMonth(anoMes, -11) : null),
+    [anoMes],
+  );
+  const { data: evolucaoData } = useEvolucaoTemporal(regiao, dataInicioEvolucao, anoMes);
+
+  const evolucaoPenetracaoData = useMemo(() => (
+    evolucaoData?.serieTemporal.map((ponto) => {
+      const obj: Record<string, string | number> = { anoMes: ponto.anoMes };
+      ponto.porRegiao.forEach((r) => {
+        const key = REGIAO_LABEL[r.regiao] ?? r.regiao;
+        if (r.penetracaoMedia != null) obj[key] = r.penetracaoMedia;
+      });
+      return obj;
+    }) ?? []
+  ), [evolucaoData?.serieTemporal]);
+
+  const crescimentoAcumuladoRegiaoData = useMemo(() => {
+    if (!evolucaoData?.serieTemporal.length) return [];
+    const primeiro = evolucaoData.serieTemporal[0];
+    const ultimo = evolucaoData.serieTemporal[evolucaoData.serieTemporal.length - 1];
+
+    const primeiros = new Map(primeiro.porRegiao.map((r) => [r.regiao, r.penetracaoMedia]));
+    const ultimos = new Map(ultimo.porRegiao.map((r) => [r.regiao, r.penetracaoMedia]));
+
+    return Array.from(ultimos.entries())
+      .map(([regiaoNome, ultimoValor]) => ({
+        regiao: regiaoNome,
+        variacao: (ultimoValor ?? 0) - (primeiros.get(regiaoNome) ?? 0),
+      }))
+      .sort((a, b) => a.regiao.localeCompare(b.regiao));
+  }, [evolucaoData?.serieTemporal]);
+
+  const regioesAtivas = useMemo(
+    () => Object.values(REGIAO_LABEL).filter((r) => !regiao || r === regiao),
+    [regiao],
+  );
+
+  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const hasPartialMonth =
+    evolucaoPenetracaoData.length > 0
+    && evolucaoPenetracaoData[evolucaoPenetracaoData.length - 1].anoMes === currentMonth;
+
+  const makeLabel =
+    (name: string) =>
+    (props: { x?: string | number; y?: string | number; index?: number }) => {
+      if (props.index !== evolucaoPenetracaoData.length - 1) return null;
+      const x = Number(props.x ?? 0);
+      const y = Number(props.y ?? 0);
+      return (
+        <g>
+          <text
+            x={x + 6}
+            y={y + 4}
+            fill={REGION_COLORS[name]}
+            fontSize={10}
+            fontWeight={500}
+          >
+            {name}
+          </text>
+        </g>
+      );
+    };
 
   return (
     <div>
@@ -503,6 +576,98 @@ export function VisaoGeral() {
                   metricaConfig={metricaConfig}
                 />
               </div>
+
+              {/* Evolução Regional */}
+              {evolucaoData && (
+                <div className="flex flex-col lg:flex-row gap-6 mt-6">
+                  <div className="flex-[3] bg-white rounded-card border border-border">
+                    <div className="px-[18px] py-[14px] border-b border-border-s">
+                      <h2 className="text-[13px] font-semibold text-main">Evolução por Região — Penetração PF</h2>
+                      <p className="text-xs text-muted mt-0.5">Últimos 12 meses</p>
+                    </div>
+                    <div className="px-[18px] py-[12px]">
+                      <ResponsiveContainer width="100%" height={320}>
+                        <LineChart data={evolucaoPenetracaoData} margin={{ top: 5, right: 90, bottom: 20, left: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis
+                            dataKey="anoMes"
+                            tick={{ fontSize: 9 }}
+                            interval={Math.floor(evolucaoPenetracaoData.length / 12)}
+                            angle={-30}
+                            textAnchor="end"
+                          />
+                          <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10 }} domain={['auto', 'auto']} />
+                          <Tooltip
+                            labelFormatter={(label) => {
+                              const suffix = hasPartialMonth && label === currentMonth
+                                ? ' (dados parciais)'
+                                : '';
+                              return `${label}${suffix}`;
+                            }}
+                            formatter={(v, name) => [`${Number(v).toFixed(1)}%`, name]}
+                            contentStyle={TOOLTIP_STYLE.contentStyle}
+                            labelStyle={TOOLTIP_STYLE.labelStyle}
+                            itemStyle={TOOLTIP_STYLE.itemStyle}
+                            cursor={TOOLTIP_STYLE.cursor}
+                          />
+                          {hasPartialMonth && evolucaoPenetracaoData.length >= 2 && (
+                            <ReferenceArea
+                              x1={String(evolucaoPenetracaoData[evolucaoPenetracaoData.length - 2].anoMes)}
+                              x2={String(evolucaoPenetracaoData[evolucaoPenetracaoData.length - 1].anoMes)}
+                              fill="#f8fafc"
+                              stroke="#e2e8f0"
+                              strokeOpacity={0.5}
+                              label={{ value: 'mês atual', position: 'insideTopLeft', fontSize: 9, fill: '#94a3b8' }}
+                            />
+                          )}
+                          {regioesAtivas.map((nomeRegiao) => (
+                            <Line
+                              key={nomeRegiao}
+                              type="monotone"
+                              dataKey={nomeRegiao}
+                              stroke={REGION_COLORS[nomeRegiao]}
+                              dot={false}
+                              strokeWidth={2}
+                              connectNulls
+                              label={makeLabel(nomeRegiao)}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <div className="flex-[2] bg-white rounded-card border border-border">
+                    <div className="px-[18px] py-[14px] border-b border-border-s">
+                      <h2 className="text-[13px] font-semibold text-main">Crescimento Acumulado por Região</h2>
+                      <p className="text-xs text-muted mt-0.5">Variação de penetração no período (pp)</p>
+                    </div>
+                    <div className="px-[18px] py-[12px]">
+                      <ResponsiveContainer width="100%" height={320}>
+                        <BarChart data={crescimentoAcumuladoRegiaoData} margin={{ left: 10, right: 10 }}>
+                          <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
+                          <YAxis tickFormatter={(v) => `${Number(v).toFixed(2)} pp`} tick={{ fontSize: 10 }} width={70} />
+                          <Tooltip
+                            formatter={(v) => [`${Number(v).toFixed(2)} pp`, 'Variação (pp)']}
+                            contentStyle={TOOLTIP_STYLE.contentStyle}
+                            labelStyle={TOOLTIP_STYLE.labelStyle}
+                            itemStyle={TOOLTIP_STYLE.itemStyle}
+                            cursor={TOOLTIP_STYLE.cursor}
+                          />
+                          <Bar dataKey="variacao" name="Variação (pp)" radius={[4, 4, 0, 0]}>
+                            {crescimentoAcumuladoRegiaoData.map((entry) => (
+                              <Cell
+                                key={entry.regiao}
+                                fill={REGION_COLORS[REGIAO_LABEL[entry.regiao] ?? entry.regiao] ?? '#64748b'}
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
