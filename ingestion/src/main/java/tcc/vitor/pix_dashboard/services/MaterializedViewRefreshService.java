@@ -17,16 +17,7 @@ public class MaterializedViewRefreshService {
     private EntityManager em;
 
     @Transactional
-    @CacheEvict(cacheNames = {
-            "municipio-serie",
-            "evolucao-temporal",
-            "municipiosAtipicos",
-            "visao-geral",
-            "disparidade-regional",
-            "fatores-socioeconomicos",
-            "municipios-lista",
-            "municipio-detalhes"
-    }, allEntries = true)
+    @CacheEvict(cacheNames = {"municipio-serie", "evolucao-temporal", "municipiosAtipicos"}, allEntries = true)
     public void refreshAll() {
         log.info("Iniciando refresh das materialized views");
         long start = System.currentTimeMillis();

@@ -23,5 +23,5 @@ spring:
   cache:
     type: caffeine
     caffeine:
-      spec: maximumSize=500,expireAfterWrite=43200s
-    cache-names: municipio-serie,evolucao-temporal,municipiosAtipicos,visao-geral,disparidade-regional,fatores-socioeconomicos,municipios-lista,municipio-detalhes
+      spec: maximumSize=500,expireAfterWrite=3600s
+    cache-names: municipio-serie,evolucao-temporal,municipiosAtipicos

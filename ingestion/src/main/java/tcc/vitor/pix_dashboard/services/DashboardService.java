@@ -33,8 +33,6 @@ public class DashboardService {
     // Página 1 — Visão Geral Nacional
     // =========================================================================
 
-    @Cacheable(value = "visao-geral",
-               key = "((#regiao != null && !#regiao.isBlank()) ? #regiao : 'ALL') + '-' + ((#anoMes != null && !#anoMes.isBlank()) ? #anoMes : 'LATEST')")
     public VisaoGeralResponse getVisaoGeral(String regiao, String anoMes) {
         LocalDate data = resolveAnoMes(anoMes);
         String regiaoParam = emptyToNull(regiao);
@@ -50,8 +48,6 @@ public class DashboardService {
     // Página 2 — Disparidade Regional
     // =========================================================================
 
-    @Cacheable(value = "disparidade-regional",
-               key = "((#regiao != null && !#regiao.isBlank()) ? #regiao : 'ALL') + '-' + ((#anoMes != null && !#anoMes.isBlank()) ? #anoMes : 'LATEST') + '-' + ((#metrica != null && !#metrica.isBlank()) ? #metrica : 'penetracaoPf')")
     public DisparidadeRegionalResponse getDisparidadeRegional(String regiao, String anoMes, String metrica) {
         LocalDate data = resolveAnoMes(anoMes);
         String regiaoParam = emptyToNull(regiao);
@@ -140,7 +136,6 @@ public class DashboardService {
     // Análise Municipal
     // =========================================================================
 
-    @Cacheable(value = "municipios-lista", key = "'all'")
     public List<MunicipioListItemDTO> getMunicipios() {
         return repository.findAllMunicipios();
     }
@@ -149,8 +144,6 @@ public class DashboardService {
         return repository.searchMunicipios(nome, limit);
     }
 
-    @Cacheable(value = "municipio-detalhes",
-               key = "#municipioIbge + '-' + ((#anoMes != null && !#anoMes.isBlank()) ? #anoMes : 'LATEST')")
     public MunicipioDetalhesDTO getMunicipioDetalhes(String municipioIbge, String anoMes) {
         LocalDate data = resolveAnoMes(anoMes);
         return repository.findMunicipioDetalhes(municipioIbge, data)
@@ -227,8 +220,6 @@ public class DashboardService {
     // Página 5 — Fatores Socioeconômicos
     // =========================================================================
 
-    @Cacheable(value = "fatores-socioeconomicos",
-               key = "((#regiao != null && !#regiao.isBlank()) ? #regiao : 'ALL') + '-' + ((#anoMes != null && !#anoMes.isBlank()) ? #anoMes : 'LATEST') + '-' + ((#variavelY != null && !#variavelY.isBlank()) ? #variavelY : 'penetracaoPf')")
     public FatoresSocioeconomicosResponse getFatoresSocioeconomicos(
             String regiao, String anoMes, String variavelY) {
         LocalDate data = resolveAnoMes(anoMes);
