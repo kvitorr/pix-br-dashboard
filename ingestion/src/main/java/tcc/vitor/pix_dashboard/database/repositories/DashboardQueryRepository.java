@@ -154,7 +154,7 @@ public class DashboardQueryRepository {
                         && m.getPibPerCapita() < medianaPib)
                 .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
                         getMetricaValueFromEntity(m, metrica)).reversed())
-                .limit(7)
+                .limit(6)
                 .map(m -> new MunicipioAtipicoDTO(
                         m.getId().getMunicipioIbge(), m.getMunicipio(), m.getEstado(),
                         m.getRegiao(), m.getSiglaRegiao(),
@@ -173,7 +173,7 @@ public class DashboardQueryRepository {
                         && m.getPibPerCapita() > medianaPib)
                 .sorted(Comparator.comparingDouble((VwIndicadoresMunicipio m) ->
                         getMetricaValueFromEntity(m, metrica)))
-                .limit(7)
+                .limit(6)
                 .map(m -> new MunicipioAtipicoDTO(
                         m.getId().getMunicipioIbge(), m.getMunicipio(), m.getEstado(),
                         m.getRegiao(), m.getSiglaRegiao(),

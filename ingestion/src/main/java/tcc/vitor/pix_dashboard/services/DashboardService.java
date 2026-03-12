@@ -66,72 +66,39 @@ public class DashboardService {
     // Página 3 — Evolução Temporal
     // =========================================================================
 
-    @Cacheable(value = "evolucao-temporal",
-               key = "((#regiao != null && !#regiao.isBlank()) ? #regiao : 'ALL') + '-' + #dataInicio + '-' + #dataFim")
+    @Cacheable(value = "evolucao-temporal", key = "((#regiao != null && !#regiao.isBlank()) ? #regiao : 'ALL') + '-' + #dataInicio + '-' + #dataFim")
     public EvolucaoTemporalResponse getEvolucaoTemporal(String regiao, String dataInicio, String dataFim) {
         String regiaoParam = emptyToNull(regiao);
         LocalDate inicio = parseMesOpcional(dataInicio);
         LocalDate fim = parseMesOpcional(dataFim);
 
-        if (inicio == null) inicio = LocalDate.of(2020, 11, 1); // lançamento do Pix
+        if (inicio == null) inicio = LocalDate.of(2020, 11, 1);
         if (fim == null) fim = LocalDate.now().withDayOfMonth(1);
 
-        List<SerieTemporalRegionalProjection> rows =
-                repository.findSerieTemporalRegional(regiaoParam, inicio, fim);
+        // IMPORTANTE: A query DEVE ter ORDER BY ano_mes ASC no SQL
+        List<SerieTemporalRegionalProjection> rows = repository.findSerieTemporalRegional(regiaoParam, inicio, fim);
 
-        // Agrupar por ano_mes → { anoMes: string, porRegiao: [{regiao, penetracaoMedia}] }
         LinkedHashMap<String, List<RegiaoPenetracaoDTO>> porMes = new LinkedHashMap<>();
-        Map<String, Double> primeiroMesPorRegiao = new LinkedHashMap<>();
-        Map<String, Double> ultimoMesPorRegiao = new LinkedHashMap<>();
-        Map<String, Double> ticketNacionalPorMes = new LinkedHashMap<>();
 
         for (SerieTemporalRegionalProjection row : rows) {
             String mes = ANO_MES_FORMATTER.format(row.getAnoMes());
-            String reg = row.getRegiao();
-            Double penetracao = row.getPenetracaoMedia();
-            Double ticket = row.getTicketMedio();
 
             porMes.computeIfAbsent(mes, k -> new ArrayList<>())
                     .add(new RegiaoPenetracaoDTO(
-                            reg, penetracao, ticket,
+                            row.getRegiao(),
+                            row.getPenetracaoMedia(),
+                            row.getTicketMedio(),
                             row.getVlPerCapitaMedia(),
                             row.getRazaoPjPfMedia()
                     ));
-
-            primeiroMesPorRegiao.putIfAbsent(reg, penetracao);
-            if (penetracao != null) {
-                ultimoMesPorRegiao.put(reg, penetracao);
-            }
-
-            // Ticket médio nacional: média simples dos valores regionais por mês
-            ticketNacionalPorMes.merge(mes, ticket != null ? ticket : 0.0, Double::sum);
         }
 
         List<SerieTemporalPontoDTO> serieTemporal = porMes.entrySet().stream()
                 .map(e -> new SerieTemporalPontoDTO(e.getKey(), e.getValue()))
                 .toList();
 
-        // Crescimento acumulado por região
-        List<CrescimentoAcumuladoDTO> crescimento = ultimoMesPorRegiao.entrySet().stream()
-                .map(e -> {
-                    Double primeiro = primeiroMesPorRegiao.getOrDefault(e.getKey(), e.getValue());
-                    double variacao = e.getValue() - (primeiro != null ? primeiro : 0.0);
-                    return new CrescimentoAcumuladoDTO(e.getKey(), Math.round(variacao * 100.0) / 100.0);
-                })
-                .toList();
-
-        // Ticket médio nacional por mês (média das regiões)
-        int totalRegioes = porMes.isEmpty() ? 1 : (int) porMes.values().stream()
-                .mapToLong(List::size).average().orElse(1);
-        List<TicketNacionalDTO> ticketEvolucao = ticketNacionalPorMes.entrySet().stream()
-                .map(e -> new TicketNacionalDTO(e.getKey(),
-                        Math.round(e.getValue() / totalRegioes * 100.0) / 100.0))
-                .toList();
-
-        // KPIs
-        KpisEvolucaoDTO kpis = buildKpisEvolucao(ultimoMesPorRegiao, crescimento, serieTemporal.size());
-
-        return new EvolucaoTemporalResponse(kpis, serieTemporal, crescimento, ticketEvolucao);
+        // Retorna apenas a série. O front-end calcula o delta.
+        return new EvolucaoTemporalResponse(serieTemporal);
     }
 
     // =========================================================================
