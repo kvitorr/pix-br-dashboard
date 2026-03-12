@@ -32,6 +32,27 @@ public class VwIndicadoresMunicipio {
     @Column(name = "razao_pj_pf", columnDefinition = "numeric")
     private Double razaoPjPf;
 
+    @Column(name = "qt_pes_pagador_pf")
+    private Long qtPesPagadorPf;
+
+    @Column(name = "qt_pagador_pf")
+    private Long qtPagadorPf;
+
+    @Column(name = "qt_recebedor_pf")
+    private Long qtRecebedorPf;
+
+    @Column(name = "qt_pagador_pj")
+    private Long qtPagadorPj;
+
+    @Column(name = "vl_pagador_pf", columnDefinition = "numeric")
+    private Double vlPagadorPf;
+
+    @Column(name = "vl_recebedor_pf", columnDefinition = "numeric")
+    private Double vlRecebedorPf;
+
+    @Column(name = "populacao")
+    private Long populacao;
+
     @Column(name = "vl_per_capita_pf", columnDefinition = "numeric")
     private Double vlPerCapitaPf;
 
@@ -52,6 +73,13 @@ public class VwIndicadoresMunicipio {
     public Double getPenetracaoPf() { return penetracaoPf; }
     public Double getTicketMedioPf() { return ticketMedioPf; }
     public Double getRazaoPjPf() { return razaoPjPf; }
+    public Long getQtPesPagadorPf() { return qtPesPagadorPf; }
+    public Long getQtPagadorPf() { return qtPagadorPf; }
+    public Long getQtRecebedorPf() { return qtRecebedorPf; }
+    public Long getQtPagadorPj() { return qtPagadorPj; }
+    public Double getVlPagadorPf() { return vlPagadorPf; }
+    public Double getVlRecebedorPf() { return vlRecebedorPf; }
+    public Long getPopulacao() { return populacao; }
     public Double getVlPerCapitaPf() { return vlPerCapitaPf; }
     public Double getPibPerCapita() { return pibPerCapita; }
     public Double getIdhm() { return idhm; }
