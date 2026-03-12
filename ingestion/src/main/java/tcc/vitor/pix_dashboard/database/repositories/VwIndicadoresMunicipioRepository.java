@@ -19,10 +19,14 @@ public interface VwIndicadoresMunicipioRepository
     LocalDate findMaxAnoMes();
 
     @Query("""
-            SELECT AVG(v.penetracaoPf)   AS penetracaoMedia,
-                   AVG(v.ticketMedioPf)  AS ticketMedio,
-                   AVG(v.razaoPjPf)      AS razaoPjPf,
-                   AVG(v.vlPerCapitaPf)  AS vlPerCapita
+            SELECT CASE WHEN SUM(v.populacao) = 0 THEN NULL
+                        ELSE (SUM(v.qtPesPagadorPf) * 100.0 / SUM(v.populacao)) END AS penetracaoMedia,
+                   CASE WHEN SUM(v.qtPagadorPf) = 0 THEN NULL
+                        ELSE (SUM(v.vlPagadorPf) / SUM(v.qtPagadorPf)) END          AS ticketMedio,
+                   CASE WHEN SUM(v.qtPagadorPf) = 0 THEN NULL
+                        ELSE (SUM(v.qtPagadorPj) * 1.0 / SUM(v.qtPagadorPf)) END    AS razaoPjPf,
+                   CASE WHEN SUM(v.populacao) = 0 THEN NULL
+                        ELSE (SUM(v.vlPagadorPf + v.vlRecebedorPf) / SUM(v.populacao)) END AS vlPerCapita
             FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes = :anoMes
               AND (:regiao IS NULL OR v.regiao = :regiao)
@@ -49,10 +53,14 @@ public interface VwIndicadoresMunicipioRepository
     @Query("""
             SELECT v.regiao              AS regiao,
                    v.siglaRegiao         AS siglaRegiao,
-                   AVG(v.penetracaoPf)   AS penetracaoMedia,
-                   AVG(v.ticketMedioPf)  AS ticketMedioMedia,
-                   AVG(v.razaoPjPf)      AS razaoMedia,
-                   AVG(v.vlPerCapitaPf)  AS perCapitaMedia
+                   CASE WHEN SUM(v.populacao) = 0 THEN NULL
+                        ELSE (SUM(v.qtPesPagadorPf) * 100.0 / SUM(v.populacao)) END AS penetracaoMedia,
+                   CASE WHEN SUM(v.qtPagadorPf) = 0 THEN NULL
+                        ELSE (SUM(v.vlPagadorPf) / SUM(v.qtPagadorPf)) END          AS ticketMedioMedia,
+                   CASE WHEN SUM(v.qtPagadorPf) = 0 THEN NULL
+                        ELSE (SUM(v.qtPagadorPj) * 1.0 / SUM(v.qtPagadorPf)) END    AS razaoMedia,
+                   CASE WHEN SUM(v.populacao) = 0 THEN NULL
+                        ELSE (SUM(v.vlPagadorPf + v.vlRecebedorPf) / SUM(v.populacao)) END AS perCapitaMedia
             FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes = :anoMes
               AND (:regiao IS NULL OR v.regiao = :regiao)
@@ -218,10 +226,14 @@ public interface VwIndicadoresMunicipioRepository
 
     @Query("""
             SELECT v.id.anoMes          AS anoMes,
-                   AVG(v.penetracaoPf)  AS penetracaoMedia,
-                   AVG(v.ticketMedioPf) AS ticketMedioMedia,
-                   AVG(v.vlPerCapitaPf) AS vlPerCapitaMedia,
-                   AVG(v.razaoPjPf)     AS razaoPjPfMedia
+                   CASE WHEN SUM(v.populacao) = 0 THEN NULL
+                        ELSE (SUM(v.qtPesPagadorPf) * 100.0 / SUM(v.populacao)) END AS penetracaoMedia,
+                   CASE WHEN SUM(v.qtPagadorPf) = 0 THEN NULL
+                        ELSE (SUM(v.vlPagadorPf) / SUM(v.qtPagadorPf)) END          AS ticketMedioMedia,
+                   CASE WHEN SUM(v.populacao) = 0 THEN NULL
+                        ELSE (SUM(v.vlPagadorPf + v.vlRecebedorPf) / SUM(v.populacao)) END AS vlPerCapitaMedia,
+                   CASE WHEN SUM(v.qtPagadorPf) = 0 THEN NULL
+                        ELSE (SUM(v.qtPagadorPj) * 1.0 / SUM(v.qtPagadorPf)) END    AS razaoPjPfMedia
             FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes >= :dataInicio
               AND v.id.anoMes <= :dataFim
@@ -236,10 +248,14 @@ public interface VwIndicadoresMunicipioRepository
 
     @Query("""
             SELECT v.id.anoMes          AS anoMes,
-                   AVG(v.penetracaoPf)  AS penetracaoMedia,
-                   AVG(v.ticketMedioPf) AS ticketMedioMedia,
-                   AVG(v.vlPerCapitaPf) AS vlPerCapitaMedia,
-                   AVG(v.razaoPjPf)     AS razaoPjPfMedia
+                   CASE WHEN SUM(v.populacao) = 0 THEN NULL
+                        ELSE (SUM(v.qtPesPagadorPf) * 100.0 / SUM(v.populacao)) END AS penetracaoMedia,
+                   CASE WHEN SUM(v.qtPagadorPf) = 0 THEN NULL
+                        ELSE (SUM(v.vlPagadorPf) / SUM(v.qtPagadorPf)) END          AS ticketMedioMedia,
+                   CASE WHEN SUM(v.populacao) = 0 THEN NULL
+                        ELSE (SUM(v.vlPagadorPf + v.vlRecebedorPf) / SUM(v.populacao)) END AS vlPerCapitaMedia,
+                   CASE WHEN SUM(v.qtPagadorPf) = 0 THEN NULL
+                        ELSE (SUM(v.qtPagadorPj) * 1.0 / SUM(v.qtPagadorPf)) END    AS razaoPjPfMedia
             FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes >= :dataInicio
               AND v.id.anoMes <= :dataFim
