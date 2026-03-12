@@ -67,18 +67,7 @@ public interface VwIndicadoresMunicipioRepository
             GROUP BY v.regiao, v.siglaRegiao
             ORDER BY v.regiao
             """)
-    List<PenetracaoRegiaoProjection> findPenetracaoPorRegiao(
-            @Param("anoMes") LocalDate anoMes,
-            @Param("regiao") String regiao);
-
-    @Query("""
-            SELECT SUM(CASE WHEN v.penetracaoPf > 50 THEN 1 ELSE 0 END) AS acima50,
-                   SUM(CASE WHEN v.penetracaoPf <= 50 THEN 1 ELSE 0 END) AS abaixo50
-            FROM VwIndicadoresMunicipio v
-            WHERE v.id.anoMes = :anoMes
-              AND (:regiao IS NULL OR v.regiao = :regiao)
-            """)
-    CoberturaNacionalProjection findCoberturaNacional(
+    List<RegiaoWeightedAverageMetricsProjection> findWeightedAverageMetricsPorRegiao(
             @Param("anoMes") LocalDate anoMes,
             @Param("regiao") String regiao);
 
@@ -93,7 +82,7 @@ public interface VwIndicadoresMunicipioRepository
               AND (:regiao IS NULL OR v.regiao = :regiao)
             ORDER BY v.regiao
             """)
-    List<PenetracaoBrutaProjection> findPenetracaoBruta(
+    List<MetricasBrutaProjection> findMetricasBruta(
             @Param("anoMes") LocalDate anoMes,
             @Param("regiao") String regiao);
 
@@ -174,7 +163,6 @@ public interface VwIndicadoresMunicipioRepository
             SELECT v FROM VwIndicadoresMunicipio v
             WHERE v.id.anoMes = :anoMes
               AND (:regiao IS NULL OR v.regiao = :regiao)
-              AND v.penetracaoPf IS NOT NULL
             """)
     List<VwIndicadoresMunicipio> findAllForScatter(
             @Param("anoMes") LocalDate anoMes,

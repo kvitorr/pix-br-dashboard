@@ -61,8 +61,8 @@ public class DashboardQueryRepository {
                 .toList();
     }
 
-    public List<PenetracaoRegiaoDTO> findPenetracaoPorRegiao(LocalDate anoMes, String regiao) {
-        return indicadoresRepo.findPenetracaoPorRegiao(anoMes, regiao).stream()
+    public List<PenetracaoRegiaoDTO> findWeightedAverageMetricsPorRegiao(LocalDate anoMes, String regiao) {
+        return indicadoresRepo.findWeightedAverageMetricsPorRegiao(anoMes, regiao).stream()
                 .map(p -> new PenetracaoRegiaoDTO(
                         p.getRegiao(),
                         p.getSiglaRegiao(),
@@ -73,25 +73,17 @@ public class DashboardQueryRepository {
                 .toList();
     }
 
-    public DonutCoberturaNacionalDTO findCoberturaNacional(LocalDate anoMes, String regiao) {
-        CoberturaNacionalProjection p = indicadoresRepo.findCoberturaNacional(anoMes, regiao);
-        return new DonutCoberturaNacionalDTO(
-                p.getAcima50() != null ? p.getAcima50() : 0L,
-                p.getAbaixo50() != null ? p.getAbaixo50() : 0L
-        );
-    }
-
     // =========================================================================
     // Disparidade Regional
     // =========================================================================
 
     public List<IqrRegiaoDTO> findIqrPorRegiao(LocalDate anoMes, String regiao, String metrica) {
-        List<PenetracaoBrutaProjection> bruta = indicadoresRepo.findPenetracaoBruta(anoMes, regiao);
+        List<MetricasBrutaProjection> bruta = indicadoresRepo.findMetricasBruta(anoMes, regiao);
 
         Map<String, List<Double>> porRegiao = bruta.stream()
                 .filter(p -> getMetricaValueFromBruta(p, metrica) != null)
                 .collect(Collectors.groupingBy(
-                        PenetracaoBrutaProjection::getRegiao,
+                        MetricasBrutaProjection::getRegiao,
                         Collectors.mapping(p -> getMetricaValueFromBruta(p, metrica), Collectors.toList())
                 ));
 
@@ -287,7 +279,7 @@ public class DashboardQueryRepository {
     // Helpers privados
     // =========================================================================
 
-    private Double getMetricaValueFromBruta(PenetracaoBrutaProjection p, String metrica) {
+    private Double getMetricaValueFromBruta(MetricasBrutaProjection p, String metrica) {
         return switch (metrica != null ? metrica : "penetracaoPf") {
             case "ticketMedioPf" -> p.getTicketMedioPf();
             case "razaoPjPf"     -> p.getRazaoPjPf();

@@ -37,7 +37,6 @@ export interface VisaoGeralResponse {
   kpis: KpisVisaoGeral;
   mapaMunicipios: MapaMunicipio[];
   penetracaoPorRegiao: PenetracaoRegiao[];
-  coberturaNacional: DonutCobertura;
 }
 
 // --- Disparidade Regional ---

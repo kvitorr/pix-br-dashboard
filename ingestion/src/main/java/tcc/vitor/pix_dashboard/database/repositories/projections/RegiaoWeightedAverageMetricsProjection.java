@@ -1,6 +1,6 @@
 package tcc.vitor.pix_dashboard.database.repositories.projections;
 
-public interface PenetracaoRegiaoProjection {
+public interface RegiaoWeightedAverageMetricsProjection {
     String getRegiao();
     String getSiglaRegiao();
     Double getPenetracaoMedia();

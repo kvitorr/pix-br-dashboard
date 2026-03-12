@@ -12,14 +12,22 @@ let ufCache: GeoJSON.FeatureCollection | null = null;
 
 export type MetricFormato = 'percent' | 'currency' | 'decimal';
 
+// ============================================================================
+// DICIONÁRIO DE ESCALAS FIXAS (Ajuste os valores conforme a sua realidade)
+// ============================================================================
+const ESCALAS_FIXAS: Record<string, number[]> = {
+  penetracaoPf: [25, 35, 50, 60],        // Em %
+  ticketMedioPf: [153.97, 196.65, 247.45, 326.78],     // Em R$
+  vlPerCapitaPf: [1315.29, 2613.39, 4072.74, 5877.84], // Em R$
+  razaoPjPf: [0.0288, 0.0477, 0.0702, 0.0990]     // Decimal (proporção)
+};
+
 interface MapaCoropléticoProps {
   municipios: MapaMunicipio[];
   metricKey?: keyof MapaMunicipio;
   metricLabel?: string;
   metricFormato?: MetricFormato;
   height?: number;
-  useAbsoluteScale?: boolean;
-  thresholds?: number[];
   showTileLayer?: boolean;
 }
 
@@ -43,8 +51,6 @@ export function MapaCoropletico({
   metricLabel = 'Penetração',
   metricFormato = 'percent',
   height = 480,
-  useAbsoluteScale = false,
-  thresholds: thresholdsProp,
   showTileLayer = false,
 }: MapaCoropléticoProps) {
   const mapRef = useRef<LeafletMap | null>(null);
@@ -110,35 +116,22 @@ export function MapaCoropletico({
       try {
         const values = municipios
           .map((m) => m[metricKey] as number | null)
-          .filter((v): v is number => v != null)
-          .sort((a, b) => a - b);
+          .filter((v): v is number => v != null);
 
-        const absoluteThresholds = thresholdsProp ?? [20, 40, 60, 80];
-        const thresholds = useAbsoluteScale
-          ? absoluteThresholds
-          : [1, 2, 3, 4].map(q => values[Math.floor((q * values.length) / 5)] ?? 0);
+        // Busca a escala fixa da métrica (ou usa uma padrão de segurança)
+        const thresholds = ESCALAS_FIXAS[String(metricKey)] || [20, 40, 60, 80];
         const dadosMap = new Map(municipios.map(m => [String(m.municipioIbge), m]));
 
+        // Monta a Legenda usando a escala fixa
         if (values.length > 0) {
           const [t0, t1, t2, t3] = thresholds;
-          if (useAbsoluteScale) {
-            setLegendItems([
-              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: formatLegendValue(0, metricFormato) + ' a ' + formatLegendValue(t0 ?? 0, metricFormato) },
-              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: formatLegendValue(t0 ?? 0, metricFormato) + ' a ' + formatLegendValue(t1 ?? 0, metricFormato) },
-              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: formatLegendValue(t1 ?? 0, metricFormato) + ' a ' + formatLegendValue(t2 ?? 0, metricFormato) },
-              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: formatLegendValue(t2 ?? 0, metricFormato) + ' a ' + formatLegendValue(t3 ?? 0, metricFormato) },
-              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: '> ' + formatLegendValue(t3 ?? 0, metricFormato) },
-            ]);
-          } else {
-            const minVal = values[0] ?? 0;
-            setLegendItems([
-              { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: `${formatLegendValue(minVal, metricFormato)} a ${formatLegendValue(t0 ?? 0, metricFormato)}` },
-              { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: `${formatLegendValue(t0 ?? 0, metricFormato)} a ${formatLegendValue(t1 ?? 0, metricFormato)}` },
-              { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: `${formatLegendValue(t1 ?? 0, metricFormato)} a ${formatLegendValue(t2 ?? 0, metricFormato)}` },
-              { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: `${formatLegendValue(t2 ?? 0, metricFormato)} a ${formatLegendValue(t3 ?? 0, metricFormato)}` },
-              { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: `> ${formatLegendValue(t3 ?? 0, metricFormato)}` },
-            ]);
-          }
+          setLegendItems([
+            { color: CHOROPLETH_SCALE[0] ?? '#e5e7eb', label: `Até ${formatLegendValue(t0, metricFormato)}` },
+            { color: CHOROPLETH_SCALE[1] ?? '#e5e7eb', label: `${formatLegendValue(t0, metricFormato)} a ${formatLegendValue(t1, metricFormato)}` },
+            { color: CHOROPLETH_SCALE[2] ?? '#e5e7eb', label: `${formatLegendValue(t1, metricFormato)} a ${formatLegendValue(t2, metricFormato)}` },
+            { color: CHOROPLETH_SCALE[3] ?? '#e5e7eb', label: `${formatLegendValue(t2, metricFormato)} a ${formatLegendValue(t3, metricFormato)}` },
+            { color: CHOROPLETH_SCALE[4] ?? '#e5e7eb', label: `Acima de ${formatLegendValue(t3, metricFormato)}` },
+          ]);
         }
 
         const featuresFiltradas = geojson.features.filter(feat => {
@@ -293,7 +286,7 @@ export function MapaCoropletico({
     }
 
     return () => { isMounted = false; };
-  }, [municipios, metricKey, metricFormato, useAbsoluteScale, thresholdsProp]);
+  }, [municipios, metricKey, metricFormato]);
 
   return (
       <div className="relative rounded-xl overflow-hidden bg-slate-50" style={{ height: `${height}px`, width: '100%' }}>

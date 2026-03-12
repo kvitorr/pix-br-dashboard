@@ -5,6 +5,5 @@ import java.util.List;
 public record VisaoGeralResponse(
         KpisVisaoGeralDTO kpis,
         List<MapaMunicipioDTO> mapaMunicipios,
-        List<PenetracaoRegiaoDTO> penetracaoPorRegiao,
-        DonutCoberturaNacionalDTO coberturaNacional
+        List<PenetracaoRegiaoDTO> penetracaoPorRegiao
 ) {}

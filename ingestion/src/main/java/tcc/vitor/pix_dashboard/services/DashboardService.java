@@ -41,9 +41,7 @@ public class DashboardService {
         return new VisaoGeralResponse(
                 repository.findKpisVisaoGeral(data, regiaoParam),
                 repository.findMapaMunicipios(data, regiaoParam),
-                repository.findPenetracaoPorRegiao(data, regiaoParam),
-                repository.findCoberturaNacional(data, regiaoParam)
-        );
+                repository.findWeightedAverageMetricsPorRegiao(data, regiaoParam));
     }
 
     // =========================================================================

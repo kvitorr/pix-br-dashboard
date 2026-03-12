@@ -1,6 +1,6 @@
 package tcc.vitor.pix_dashboard.database.repositories.projections;
 
-public interface PenetracaoBrutaProjection {
+public interface MetricasBrutaProjection {
     String getRegiao();
     Double getPenetracaoPf();
     Double getTicketMedioPf();
