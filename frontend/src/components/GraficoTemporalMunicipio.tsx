@@ -87,10 +87,13 @@ interface Props {
   ibge: string;
   municipioNome: string;
   regiao: string;
-  metricaSelecionada: MetricaKey;
+  // metricaSelecionada FOI REMOVIDA DAQUI! O componente agora controla o próprio estado.
 }
 
-export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaSelecionada }: Props) {
+export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao }: Props) {
+  // Estado local para controlar a métrica do gráfico
+  const [metrica, setMetrica] = useState<MetricaKey>('penetracaoPf');
+
   const [dataInicio, setDataInicio] = useState<string>(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 11);
@@ -102,7 +105,7 @@ export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaS
   const showSkeleton = useDelayedLoading(loading);
 
   const corMunicipio = REGION_COLORS[regiao] ?? '#3b82f6';
-  const config = METRICAS[metricaSelecionada];
+  const config = METRICAS[metrica]; // Usa o estado local 'metrica' em vez da prop
 
   if (showSkeleton) return <ChartCardSkeleton />;
   if (error || !data) return null;
@@ -116,23 +119,41 @@ export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaS
 
   return (
     <div className="bg-white rounded-card border border-border">
-      {/* Cabeçalho */}
-      <div className="px-[18px] py-[14px] border-b border-border-s flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-[13px] font-semibold text-main">
-          Evolução Temporal — {config.label}
-        </h3>
-        <div className="flex items-center gap-3">
+      
+      {/* ── Cabeçalho com Filtros Isolados ── */}
+      <div className="px-[18px] py-[14px] border-b border-border-s flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-[13px] font-semibold text-main">Evolução Histórica</h3>
+          <p className="text-xs text-muted mt-0.5">Comportamento da métrica ao longo do período</p>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          
+          {/* Seletor de Métrica do Gráfico */}
+          <div className="flex items-center gap-2">
+            <select
+              value={metrica}
+              onChange={(e) => setMetrica(e.target.value as MetricaKey)}
+              className="border border-border rounded-input px-2 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              {(Object.keys(METRICAS) as MetricaKey[]).map((k) => (
+                <option key={k} value={k}>{METRICAS[k].label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-px h-4 bg-border-s hidden sm:block"></div>
+          
+          {/* Seletores de Data (De... Até...) */}
           <div className="flex items-center gap-1.5">
-            <label className="text-[12px] text-secondary whitespace-nowrap">De:</label>
+            <label className="text-[12px] font-medium text-secondary whitespace-nowrap">De:</label>
             <input
               type="month"
               value={dataInicio}
               onChange={(e) => setDataInicio(e.target.value)}
               className="border border-border rounded-input px-2 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
             />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <label className="text-[12px] text-secondary whitespace-nowrap">Até:</label>
+            <label className="text-[12px] font-medium text-secondary whitespace-nowrap ml-1">Até:</label>
             <input
               type="month"
               value={dataFim}
@@ -140,6 +161,7 @@ export function GraficoTemporalMunicipio({ ibge, municipioNome, regiao, metricaS
               className="border border-border rounded-input px-2 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
+
         </div>
       </div>
 

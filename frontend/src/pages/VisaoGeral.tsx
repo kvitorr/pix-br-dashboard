@@ -7,7 +7,6 @@ import { useVisaoGeral } from '../hooks/useVisaoGeral';
 import { useDisparidadeRegional } from '../hooks/useDisparidadeRegional';
 import { useEvolucaoTemporal } from '../hooks/useEvolucaoTemporal';
 import { KpiCard } from '../components/KpiCard';
-import { FilterBar } from '../components/FilterBar';
 import { ErrorState } from '../components/ErrorState';
 import { VisaoGeralSkeleton } from '../components/Skeleton';
 import { MapaCoropletico } from '../components/MapaCoropletico';
@@ -27,7 +26,7 @@ const VARIAVEIS_MAPA: Array<{
 }> = [
   { value: 'penetracaoPf',  label: 'Penetração (%)',         labelCurto: 'Penetração',   formato: 'percent',  campoRegiao: 'penetracaoMedia'  },
   { value: 'ticketMedioPf', label: 'Ticket Médio (R$)',      labelCurto: 'Ticket Médio', formato: 'currency', campoRegiao: 'ticketMedioMedia' },
-  { value: 'razaoPjPf',     label: 'Razão PJ/PF',            labelCurto: 'Razão PJ/PF', formato: 'decimal',  campoRegiao: 'razaoMedia'       },
+  { value: 'razaoPjPf',     label: 'Razão PJ/PF',            labelCurto: 'Razão PJ/PF',  formato: 'decimal',  campoRegiao: 'razaoMedia'       },
   { value: 'vlPerCapitaPf', label: 'Volume Per Capita (R$)', labelCurto: 'Per Capita',   formato: 'currency', campoRegiao: 'perCapitaMedia'   },
 ];
 
@@ -77,14 +76,23 @@ const METRICA_EVOLUCAO_CONFIG: Record<MetricaEvolucao, {
   },
 };
 
-// ─── Mapeamento de capitalização das regiões (API retorna maiúsculas) ─────────
-
 const REGIAO_LABEL: Record<string, string> = {
   'NORTE': 'Norte',
   'NORDESTE': 'Nordeste',
   'CENTRO-OESTE': 'Centro-Oeste',
   'SUDESTE': 'Sudeste',
   'SUL': 'Sul',
+};
+
+// ─── Dicionário de UFs para limpar o layout ───────────────────────────────────
+const ESTADO_UF: Record<string, string> = {
+  'ACRE': 'AC', 'ALAGOAS': 'AL', 'AMAPÁ': 'AP', 'AMAZONAS': 'AM', 'BAHIA': 'BA',
+  'CEARÁ': 'CE', 'DISTRITO FEDERAL': 'DF', 'ESPÍRITO SANTO': 'ES', 'GOIÁS': 'GO',
+  'MARANHÃO': 'MA', 'MATO GROSSO': 'MT', 'MATO GROSSO DO SUL': 'MS', 'MINAS GERAIS': 'MG',
+  'PARÁ': 'PA', 'PARAÍBA': 'PB', 'PARANÁ': 'PR', 'PERNAMBUCO': 'PE', 'PIAUÍ': 'PI',
+  'RIO DE JANEIRO': 'RJ', 'RIO GRANDE DO NORTE': 'RN', 'RIO GRANDE DO SUL': 'RS',
+  'RONDÔNIA': 'RO', 'RORAIMA': 'RR', 'SANTA CATARINA': 'SC', 'SÃO PAULO': 'SP',
+  'SERGIPE': 'SE', 'TOCANTINS': 'TO'
 };
 
 // ─── Helpers de formatação ────────────────────────────────────────────────────
@@ -120,7 +128,7 @@ function addMonthsToYearMonth(anoMes: string, monthDelta: number): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
-// ─── RankingMunicipiosCard ────────────────────────────────────────────────────
+// ─── RankingMunicipiosCard (Visual Limpo) ─────────────────────────────────────
 
 function RankingMunicipiosCard({
   top10,
@@ -174,10 +182,8 @@ function RankingMunicipiosCard({
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left border-b border-border-s">
-              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">#</th>
-              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">Município</th>
-              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">Estado</th>
-              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted w-32">Barra</th>
+              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted w-8">#</th>
+              <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted">Localidade</th>
               <th className="pb-2 font-medium text-[11px] uppercase tracking-wide text-muted text-right">
                 {metricaConfig.label}
               </th>
@@ -191,27 +197,30 @@ function RankingMunicipiosCard({
                   ? Math.min(100, val)
                   : Math.min(100, (val / maxVal) * 100)
                 : 0;
+              
+              const uf = ESTADO_UF[m.estado?.toUpperCase()] ?? m.estado;
+
               return (
-                <tr key={m.municipioIbge} className="border-b border-border-s last:border-0">
-                  <td className="py-2 text-muted font-mono text-[12px] w-6">{i + 1}</td>
-                  <td className="py-2 pr-2">
-                    <span className="font-medium text-main text-[13px]">{m.municipio}</span>
+                <tr key={m.municipioIbge} className="border-b border-border-s last:border-0 hover:bg-slate-50 transition-colors">
+                  <td className="py-2.5 text-muted font-mono text-[12px]">{i + 1}</td>
+                  <td className="py-2.5 pr-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-main text-[13px]">{m.municipio}</span>
+                      <span className="bg-slate-100 text-slate-500 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        {uf}
+                      </span>
+                    </div>
                   </td>
-                  <td className="py-2">
-                    <span className="inline-block bg-subtle border border-border rounded px-1.5 py-0.5 text-[11px] font-medium text-secondary">
-                      {m.estado}
-                    </span>
-                  </td>
-                  <td className="py-2 w-32 pr-3">
-                    <div className={`h-1.5 rounded-full ${isTop ? 'bg-pos-bg' : 'bg-accent-bg'}`}>
+                  <td className="py-2.5 flex items-center justify-end gap-3">
+                    <div className={`w-20 lg:w-24 h-1.5 rounded-full ${isTop ? 'bg-pos-bg/40' : 'bg-accent-bg/40'}`}>
                       <div
-                        className={`h-1.5 rounded-full ${isTop ? 'bg-pos' : 'bg-accent'}`}
+                        className={`h-1.5 rounded-full ${isTop ? 'bg-pos/80' : 'bg-accent/80'}`}
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>
-                  </td>
-                  <td className="py-2 text-right font-semibold text-[13px] text-main">
-                    {formatMetric(val, metricaConfig.formato)}
+                    <span className="font-semibold text-[13px] text-main w-14 text-right">
+                      {formatMetric(val, metricaConfig.formato)}
+                    </span>
                   </td>
                 </tr>
               );
@@ -223,7 +232,7 @@ function RankingMunicipiosCard({
   );
 }
 
-// ─── MunicipiosAtipicosCard ───────────────────────────────────────────────────
+// ─── MunicipiosAtipicosCard (Visual Limpo) ────────────────────────────────────
 
 const TAG_STYLES: Record<string, string> = {
   'PIB baixo': 'bg-neg-bg text-neg',
@@ -281,31 +290,36 @@ function MunicipiosAtipicosCard({
           </button>
         </div>
       </div>
-      <div className="px-[18px] py-[12px] flex flex-col gap-3">
+      <div className="px-[18px] py-[10px] flex flex-col gap-4">
         {filteredItems.length === 0 && (
           <p className="text-muted text-sm text-center py-4">Sem dados disponíveis</p>
         )}
         {filteredItems.map((m) => {
           const isAlta = m.tipo === 'alta-adocao-baixo-pib';
           const val = getMetricValue(m, metricaConfig.value);
+          const uf = ESTADO_UF[m.estado?.toUpperCase()] ?? m.estado;
+
           return (
             <div
               key={m.municipioIbge}
-              className="flex items-start gap-3 py-2 border-b border-border-s last:border-0"
+              className="flex items-start gap-3 py-2 border-b border-border-s last:border-0 hover:bg-slate-50 transition-colors px-2 -mx-2 rounded"
             >
               <div
                 className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${isAlta ? 'bg-orange-500' : 'bg-accent'}`}
               />
               <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-1.5">
+                <div className="flex items-center gap-2">
                   <span className="font-semibold text-[13px] text-main">{m.municipio}</span>
-                  <span className="text-muted text-[11px]">{m.estado} · {m.regiao}</span>
+                  <span className="bg-slate-100 text-slate-500 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                    {uf}
+                  </span>
+                  <span className="text-muted text-[11px] hidden sm:inline">· {m.regiao}</span>
                 </div>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {m.tags.map((tag) => (
                     <span
                       key={tag}
-                      className={`text-[11px] font-medium px-2 py-0.5 rounded-badge ${TAG_STYLES[tag] ?? 'bg-subtle text-secondary'}`}
+                      className={`text-[11px] font-medium px-2.5 py-1 rounded-badge ${TAG_STYLES[tag] ?? 'bg-subtle text-secondary'}`}
                     >
                       {tag}
                     </span>
@@ -332,24 +346,22 @@ export function VisaoGeral() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [metricaIdx, setMetricaIdx] = useState(0);
-  const [regiaoEvolucao, setRegiaoEvolucao] = useState<string | null>(null);
-  const [dataFimEvolucao, setDataFimEvolucao] = useState<string | null>(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  });
+  
   const [dataInicioEvolucao, setDataInicioEvolucao] = useState<string | null>(() => {
     const d = new Date();
     return addMonthsToYearMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, -11);
   });
+
+  const [metricaIdx, setMetricaIdx] = useState(0);
   const [metricaEvolucao, setMetricaEvolucao] = useState<MetricaEvolucao>('penetracaoPf');
+  
   const metricaConfig = VARIAVEIS_MAPA[metricaIdx] ?? VARIAVEIS_MAPA[0]!;
   const metricaEvolucaoConfig = METRICA_EVOLUCAO_CONFIG[metricaEvolucao];
 
   const { data, loading, error } = useVisaoGeral(regiao, anoMes);
   const showSkeleton = useDelayedLoading(loading);
   const { data: dispData } = useDisparidadeRegional(regiao, anoMes, metricaConfig.value);
-  const { data: evolucaoData } = useEvolucaoTemporal(regiaoEvolucao, dataInicioEvolucao, dataFimEvolucao);
+  const { data: evolucaoData } = useEvolucaoTemporal(regiao, dataInicioEvolucao, anoMes);
 
   const evolucaoPenetracaoData = useMemo(() => (
     evolucaoData?.serieTemporal.map((ponto) => {
@@ -380,8 +392,8 @@ export function VisaoGeral() {
   }, [evolucaoData?.serieTemporal, metricaEvolucaoConfig.regiaoKey]);
 
   const regioesAtivas = useMemo(
-    () => REGIONS.filter((r) => !regiaoEvolucao || r === regiaoEvolucao),
-    [regiaoEvolucao],
+    () => REGIONS.filter((r) => !regiao || r === regiao),
+    [regiao],
   );
 
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
@@ -414,14 +426,49 @@ export function VisaoGeral() {
     <div>
       <h1 className="text-[20px] font-bold text-main mb-4">Visão Geral Nacional</h1>
 
-      <FilterBar
-        regiao={regiao}
-        anoMes={anoMes}
-        onRegiaoChange={setRegiao}
-        onAnoMesChange={setAnoMes}
-      >
+      {/* ── Nova Barra de Filtros Refatorada e Organizada ── */}
+      <div className="bg-white px-[18px] py-[12px] rounded-card border border-border flex flex-wrap items-center gap-4 mb-6">
+        
+        {/* 1. Região */}
         <div className="flex items-center gap-2">
-          <label className="text-[13px] font-medium text-main">Métrica:</label>
+          <label className="text-[13px] font-medium text-main">Região:</label>
+          <select
+            value={regiao ?? ''}
+            onChange={(e) => setRegiao(e.target.value || null)}
+            className="border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+          >
+            <option value="">Todas</option>
+            {REGIONS.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="w-px h-5 bg-border-s hidden sm:block"></div>
+
+        {/* 2. Período agrupado (de... até...) */}
+        <div className="flex items-center gap-2">
+          <label className="text-[13px] font-medium text-main">Período: de</label>
+          <input
+            type="month"
+            value={dataInicioEvolucao ?? ''}
+            onChange={(e) => setDataInicioEvolucao(e.target.value || null)}
+            className="border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+          <label className="text-[13px] font-medium text-main ml-1">até</label>
+          <input
+            type="month"
+            value={anoMes ?? ''}
+            onChange={(e) => setAnoMes(e.target.value || null)}
+            className="border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </div>
+
+        <div className="w-px h-5 bg-border-s hidden sm:block"></div>
+
+        {/* 3. Métrica */}
+        <div className="flex items-center gap-2">
+          <label className="text-[13px] font-medium text-main">Métrica do Mapa:</label>
           <select
             value={metricaIdx}
             onChange={(e) => setMetricaIdx(Number(e.target.value))}
@@ -432,116 +479,62 @@ export function VisaoGeral() {
             ))}
           </select>
         </div>
-      </FilterBar>
+      </div>
+      {/* ──────────────────────────────────────────────────── */}
 
-      {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
         <ErrorState message={error.message} />
       ) : showSkeleton ? (
         <VisaoGeralSkeleton />
       ) : data ? (
-        <div className="mt-6">
+        <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <KpiCard
+              title="Penetração Média PF"
+              value={data.kpis.penetracaoMediaNacional?.toFixed(1) ?? '—'}
+              unit="%"
+              subtitle="Usuários Pix / População"
+            />
+            <KpiCard
+              title="Ticket Médio PF"
+              value={data.kpis.ticketMedioPf != null
+                ? `R$ ${data.kpis.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                : '—'}
+              subtitle="Valor médio por transação"
+            />
+            <KpiCard
+              title="Razão PJ/PF"
+              value={data.kpis.razaoPjPf?.toFixed(4) ?? '—'}
+              subtitle="Transações PJ sobre PF"
+            />
+            <KpiCard
+              title="Volume per Capita"
+              value={data.kpis.vlPerCapitaPf != null
+                ? `R$ ${data.kpis.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                : '—'}
+              subtitle="Total transacionado por habitante"
+            />
+          </div>
 
-          {/* Hero: Mapa (esquerda) + Painel direito (KPIs + Bar Chart) */}
           <div className="flex flex-col lg:flex-row gap-6 mb-6">
-
-            {/* Mapa — elemento hero */}
-            <div className="flex-1">
-              <div className="bg-white rounded-card border border-border h-full flex flex-col">
-                <div className="px-[18px] py-[14px] border-b border-border-s">
-                  <h2 className="text-[13px] font-semibold text-main">{metricaConfig.label} por Município</h2>
-                </div>
-                <div className="px-[18px] py-[12px] flex-1">
-                  <MapaCoropletico
-                    municipios={data.mapaMunicipios}
-                    metricKey={metricaConfig.value}
-                    metricLabel={metricaConfig.label}
-                    metricFormato={metricaConfig.formato}
-                    height={540}
-                  />
-                </div>
+            <div className="lg:flex-[2] bg-white rounded-card border border-border flex flex-col h-full">
+              <div className="px-[18px] py-[14px] border-b border-border-s">
+                <h2 className="text-[13px] font-semibold text-main">{metricaConfig.label} por Município</h2>
               </div>
-            </div>
-
-            {/* Painel direito: KPIs + Bar Chart */}
-            <div className="flex flex-col gap-4 lg:w-[390px]">
-
-              {/* KPI Cards — grid 2x2 */}
-              <div className="grid grid-cols-2 gap-3">
-                <KpiCard
-                  title="Penetração Média PF"
-                  value={data.kpis.penetracaoMediaNacional?.toFixed(1) ?? '—'}
-                  unit="%"
-                  subtitle="Usuários Pix / População"
-                />
-                <KpiCard
-                  title="Ticket Médio PF"
-                  value={data.kpis.ticketMedioPf != null
-                    ? `R$ ${data.kpis.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                    : '—'}
-                  subtitle="Valor médio por transação"
-                />
-                <KpiCard
-                  title="Razão PJ/PF"
-                  value={data.kpis.razaoPjPf?.toFixed(4) ?? '—'}
-                  subtitle="Transações PJ sobre PF"
-                />
-                <KpiCard
-                  title="Volume per Capita"
-                  value={data.kpis.vlPerCapitaPf != null
-                    ? `R$ ${data.kpis.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                    : '—'}
-                  subtitle="Total transacionado por habitante"
+              <div className="px-[18px] py-[12px] flex-1">
+                <MapaCoropletico
+                  municipios={data.mapaMunicipios}
+                  metricKey={metricaConfig.value}
+                  metricLabel={metricaConfig.label}
+                  metricFormato={metricaConfig.formato}
+                  height={540}
                 />
               </div>
-
-              {/* Bar Chart — ocupa o espaço restante */}
-              <div className="bg-white rounded-card border border-border flex-1">
-                <div className="px-[18px] py-[14px] border-b border-border-s">
-                  <h2 className="text-[13px] font-semibold text-main">{metricaConfig.label} por Região</h2>
-                </div>
-                <div className="px-[18px] py-[12px]">
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart
-                      data={data.penetracaoPorRegiao}
-                      layout="vertical"
-                      margin={{ left: 5, right: 10 }}
-                    >
-                      <XAxis
-                        type="number"
-                        unit={metricaConfig.formato === 'percent' ? '%' : ''}
-                        tick={{ fontSize: 11 }}
-                      />
-                      <YAxis type="category" dataKey="regiao" tick={{ fontSize: 11 }} width={60} />
-                      <Tooltip
-                        formatter={(v) => {
-                          const num = Number(v);
-                          if (metricaConfig.formato === 'percent') return [`${num.toFixed(1)}%`, metricaConfig.label];
-                          if (metricaConfig.formato === 'currency') return [`R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, metricaConfig.label];
-                          return [num.toFixed(4), metricaConfig.label];
-                        }}
-                        contentStyle={TOOLTIP_STYLE.contentStyle}
-                        labelStyle={TOOLTIP_STYLE.labelStyle}
-                        itemStyle={TOOLTIP_STYLE.itemStyle}
-                        cursor={TOOLTIP_STYLE.cursor}
-                      />
-                      <Bar dataKey={metricaConfig.campoRegiao as string} radius={[0, 4, 4, 0]}>
-                        {data.penetracaoPorRegiao.map((entry) => (
-                          <Cell key={entry.regiao} fill={REGION_COLORS[REGIAO_LABEL[entry.regiao] ?? entry.regiao] ?? '#64748b'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
             </div>
           </div>
 
-          {/* Disparidade Regional */}
           {dispData && (
             <>
-              {/* IQR e Desvio Padrão */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div className="bg-white rounded-card border border-border">
                   <div className="px-[18px] py-[14px] border-b border-border-s">
@@ -616,8 +609,7 @@ export function VisaoGeral() {
                 </div>
               </div>
 
-              {/* Rankings */}
-              <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
+              <div className="flex flex-col lg:flex-row gap-6 lg:items-start mb-6">
                 <RankingMunicipiosCard
                   top10={dispData.top10}
                   bottom10={dispData.bottom10}
@@ -629,61 +621,24 @@ export function VisaoGeral() {
                 />
               </div>
 
-              {/* Evolução Regional */}
-              <div className="mt-6">
-                  <div className="bg-white rounded-card border border-border mb-4 px-[18px] py-[12px]">
-                    <div className="flex flex-wrap items-end gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[12px] font-medium text-main">Região</label>
-                        <select
-                          value={regiaoEvolucao ?? ''}
-                          onChange={(e) => setRegiaoEvolucao(e.target.value || null)}
-                          className="border border-border rounded-input px-2.5 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
-                        >
-                          <option value="">Todas</option>
-                          {REGIONS.map((r) => (
-                            <option key={r} value={r}>{r}</option>
-                          ))}
-                        </select>
+              <div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  
+                  <div className="lg:col-span-2 bg-white rounded-card border border-border">
+                    <div className="px-[18px] py-[14px] border-b border-border-s flex justify-between items-center">
+                      <div>
+                        <h2 className="text-[13px] font-semibold text-main">Evolução Histórica</h2>
+                        <p className="text-xs text-muted mt-0.5">Comportamento da métrica ao longo do período selecionado</p>
                       </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[12px] font-medium text-main">Data início</label>
-                        <input
-                          type="month"
-                          value={dataInicioEvolucao ?? ''}
-                          onChange={(e) => setDataInicioEvolucao(e.target.value || null)}
-                          className="border border-border rounded-input px-2.5 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[12px] font-medium text-main">Data fim</label>
-                        <input
-                          type="month"
-                          value={dataFimEvolucao ?? ''}
-                          onChange={(e) => setDataFimEvolucao(e.target.value || null)}
-                          className="border border-border rounded-input px-2.5 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1 min-w-[180px]">
-                        <label className="text-[12px] font-medium text-main">Métrica</label>
-                        <select
-                          value={metricaEvolucao}
-                          onChange={(e) => setMetricaEvolucao(e.target.value as MetricaEvolucao)}
-                          className="border border-border rounded-input px-2.5 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
-                        >
-                          {(Object.keys(METRICA_EVOLUCAO_CONFIG) as MetricaEvolucao[]).map((k) => (
-                            <option key={k} value={k}>{METRICA_EVOLUCAO_CONFIG[k].label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    <div className="lg:col-span-3 bg-white rounded-card border border-border">
-                    <div className="px-[18px] py-[14px] border-b border-border-s">
-                      <h2 className="text-[13px] font-semibold text-main">Evolução por Região — {metricaEvolucaoConfig.label}</h2>
-                      <p className="text-xs text-muted mt-0.5">Faixa selecionada</p>
+                      <select
+                        value={metricaEvolucao}
+                        onChange={(e) => setMetricaEvolucao(e.target.value as MetricaEvolucao)}
+                        className="border border-border rounded-input px-2.5 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+                      >
+                        {(Object.keys(METRICA_EVOLUCAO_CONFIG) as MetricaEvolucao[]).map((k) => (
+                          <option key={k} value={k}>{METRICA_EVOLUCAO_CONFIG[k].label}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="px-[18px] py-[12px]">
                       <ResponsiveContainer width="100%" height={320}>
@@ -737,9 +692,9 @@ export function VisaoGeral() {
                     </div>
                   </div>
 
-                    <div className="lg:col-span-1 bg-white rounded-card border border-border">
+                  <div className="lg:col-span-1 bg-white rounded-card border border-border">
                     <div className="px-[18px] py-[14px] border-b border-border-s">
-                      <h2 className="text-[13px] font-semibold text-main">Crescimento Acumulado por Região</h2>
+                      <h2 className="text-[13px] font-semibold text-main">Crescimento Acumulado</h2>
                       <p className="text-xs text-muted mt-0.5">{metricaEvolucaoConfig.variacaoLabel} no período</p>
                     </div>
                     <div className="px-[18px] py-[12px]">
