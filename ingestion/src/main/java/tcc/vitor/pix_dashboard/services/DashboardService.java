@@ -202,71 +202,79 @@ public class DashboardService {
 
         List<ScatterMunicipioDTO> scatter = repository.findScatterData(data, regiaoParam);
         List<CorrelacaoSpearmanDTO> correlacoes = calcCorrelacoes(scatter, y);
-        List<MunicipioRankingDTO> top10 = extractRanking(scatter, y, true);
-        List<MunicipioRankingDTO> bottom10 = extractRanking(scatter, y, false);
-        List<MunicipioAtipicoDTO> atipicos = repository.findMunicipiosAtipicos(data, regiaoParam, null);
 
-        return new FatoresSocioeconomicosResponse(scatter, correlacoes, top10, bottom10, atipicos);
+        return new FatoresSocioeconomicosResponse(scatter, correlacoes);
     }
 
     private List<CorrelacaoSpearmanDTO> calcCorrelacoes(List<ScatterMunicipioDTO> data, String variavelY) {
-        return List.of("pibPerCapita", "idhm", "taxaUrbanizacao").stream()
-                .map(fator -> {
-                    List<double[]> pairs = data.stream()
-                            .filter(m -> getXValue(m, fator) != null && getYValue(m, variavelY) != null)
-                            .map(m -> new double[]{getXValue(m, fator), getYValue(m, variavelY)})
-                            .toList();
+        List<String> fatores = List.of("pibPerCapita", "idhm", "taxaUrbanizacao");
 
-                    if (pairs.size() < 3)
-                        return new CorrelacaoSpearmanDTO(fator, 0.0, 1.0, pairs.size(), "Fraca");
+        return fatores.stream().map(fator -> {
+            // 1. Filtra os dados válidos apenas uma vez
+            List<ScatterMunicipioDTO> validData = data.stream()
+                    .filter(m -> getXValue(m, fator) != null && getYValue(m, variavelY) != null)
+                    .toList();
 
-                    double[] xArr = pairs.stream().mapToDouble(p -> p[0]).toArray();
-                    double[] yArr = pairs.stream().mapToDouble(p -> p[1]).toArray();
-                    int n = pairs.size();
+            int n = validData.size();
 
-                    double rho = new SpearmansCorrelation().correlation(xArr, yArr);
-                    double t = rho * Math.sqrt((n - 2.0) / (1.0 - rho * rho));
-                    double pValor = 2.0 * (1.0 - new TDistribution(n - 2).cumulativeProbability(Math.abs(t)));
+            // 2. Regra de corte para amostras pequenas
+            if (n < 3) {
+                return new CorrelacaoSpearmanDTO(fator, 0.0, 1.0, n, "Fraca");
+            }
 
-                    String forca = Math.abs(rho) >= 0.5 ? "Forte"
-                            : Math.abs(rho) >= 0.3 ? "Moderada" : "Fraca";
+            // 3. Preenche xArr e yArr em um único loop (mais performático e sem gerar lixo)
+            double[] xArr = new double[n];
+            double[] yArr = new double[n];
 
-                    return new CorrelacaoSpearmanDTO(fator, roundD2(rho), roundD4(pValor), n, forca);
-                })
-                .toList();
-    }
+            for (int i = 0; i < n; i++) {
+                ScatterMunicipioDTO dto = validData.get(i);
+                xArr[i] = getXValue(dto, fator);
+                yArr[i] = getYValue(dto, variavelY);
+            }
 
-    private List<MunicipioRankingDTO> extractRanking(
-            List<ScatterMunicipioDTO> data, String variavelY, boolean top) {
-        Comparator<ScatterMunicipioDTO> cmp = Comparator.comparingDouble(
-                m -> m.penetracaoPf() != null ? m.penetracaoPf() : -999.0);
-        Stream<ScatterMunicipioDTO> filtered = data.stream()
-                .filter(m -> getYValue(m, variavelY) != null && m.penetracaoPf() != null);
-        Stream<ScatterMunicipioDTO> sorted = top ? filtered.sorted(cmp.reversed()) : filtered.sorted(cmp);
-        return sorted.limit(10)
-                .map(m -> new MunicipioRankingDTO(
-                        m.municipioIbge(), m.municipio(), m.estado(), m.regiao(), "",
-                        m.penetracaoPf(), m.ticketMedioPf(), m.razaoPjPf(), m.vlPerCapitaPf()))
-                .toList();
+            // 4. Calcula a correlação
+            double rho = new SpearmansCorrelation().correlation(xArr, yArr);
+
+            // 5. Tratamento de anomalias matemáticas
+            if (Double.isNaN(rho)) {
+                return new CorrelacaoSpearmanDTO(fator, 0.0, 1.0, n, "Sem Variância");
+            }
+
+            double pValor;
+            if (Math.abs(rho) == 1.0) {
+                // Correlação perfeita: t tenderia ao infinito, p-valor é zero.
+                pValor = 0.0;
+            } else {
+                double t = rho * Math.sqrt((n - 2.0) / (1.0 - rho * rho));
+                pValor = 2.0 * (1.0 - new TDistribution(n - 2).cumulativeProbability(Math.abs(t)));
+            }
+
+            // 6. Determina a força da correlação
+            String forca = Math.abs(rho) >= 0.5 ? "Forte"
+                    : Math.abs(rho) >= 0.3 ? "Moderada" : "Fraca";
+
+            return new CorrelacaoSpearmanDTO(fator, roundD2(rho), roundD4(pValor), n, forca);
+        }).toList();
     }
 
     private Double getXValue(ScatterMunicipioDTO m, String fator) {
         return switch (fator) {
+            case "pibPerCapita" -> m.pibPerCapita();
             case "idhm" -> m.idhm();
             case "taxaUrbanizacao" -> m.taxaUrbanizacao();
-            default -> m.pibPerCapita();
+            default -> throw new IllegalArgumentException("Fator X desconhecido: " + fator);
         };
     }
 
     private Double getYValue(ScatterMunicipioDTO m, String y) {
         return switch (y) {
+            case "penetracaoPf" -> m.penetracaoPf();
             case "ticketMedioPf" -> m.ticketMedioPf();
             case "razaoPjPf" -> m.razaoPjPf();
             case "vlPerCapitaPf" -> m.vlPerCapitaPf();
-            default -> m.penetracaoPf();
+            default -> throw new IllegalArgumentException("Variável Y desconhecida: " + y);
         };
     }
-
     private double roundD2(double v) { return Math.round(v * 100.0) / 100.0; }
     private double roundD4(double v) { return Math.round(v * 10000.0) / 10000.0; }
     private Double round2(Double v) { return v == null ? null : Math.round(v * 100.0) / 100.0; }
