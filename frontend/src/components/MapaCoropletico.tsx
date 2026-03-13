@@ -153,7 +153,7 @@ export function MapaCoropletico({
             const idx = thresholds.filter((t) => (val ?? 0) > t).length;
             const fillColor = CHOROPLETH_SCALE[idx] ?? CHOROPLETH_SCALE[4];
 
-            return { fillColor, weight: 0.5, color: '#e2e8f0', fillOpacity: 1 };
+            return { fillColor, weight: 0.0, color: '#ffffff00', fillOpacity: 1 };
           },
           onEachFeature: (feat, layer) => {
             const cod = feat?.properties?.codarea || feat?.properties?.CD_MUN;
@@ -172,7 +172,7 @@ export function MapaCoropletico({
               mouseover: (e) => {
                 const target = e.target;
                 target.setStyle({
-                  weight: 2,
+                  weight: 1,
                   color: '#1e293b',
                   fillOpacity: 1
                 });
@@ -181,16 +181,6 @@ export function MapaCoropletico({
               mouseout: (e) => {
                 if (layerRef.current) {
                   layerRef.current.resetStyle(e.target);
-                }
-              },
-              click: (e) => {
-                const currentMap = mapRef.current;
-                if (currentMap) {
-                  currentMap.fitBounds(e.target.getBounds(), {
-                    padding: [50, 50],
-                    maxZoom: 9,
-                    animate: true
-                  });
                 }
               }
             });

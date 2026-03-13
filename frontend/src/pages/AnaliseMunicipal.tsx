@@ -69,10 +69,8 @@ export function AnaliseMunicipal() {
     <div>
       <h1 className="text-[20px] font-bold text-main mb-4">Análise Municipal</h1>
 
-      {/* ── Nova Barra de Filtros Unificada ── */}
+      {/* ── Barra de Filtros Unificada ── */}
       <div className="bg-white px-[18px] py-[12px] rounded-card border border-border flex flex-wrap items-center gap-4 mb-6">
-        
-        {/* Componente de Busca flexível para ocupar o espaço */}
         <div className="flex-1 min-w-[280px]">
           <MunicipioSearch
             selected={municipioSelecionado}
@@ -106,109 +104,106 @@ export function AnaliseMunicipal() {
             ))}
           </select>
         </div>
-
       </div>
 
-      {/* Tratamento de Erro, Loading Inicial ou Dados */}
       {error ? (
         <ErrorState message={error.message} />
       ) : municipioSelecionado && showSkeleton ? (
         <AnaliseMunicipalSkeleton />
       ) : municipioSelecionado && data ? (
-        <div>
-            {/* Cabeçalho do município em Destaque */}
-            <div className="flex items-center gap-3 mb-5">
+        <div className="flex flex-col gap-6">
+            
+            {/* Cabeçalho */}
+            <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-main">{data.municipioNome}</h2>
               <RegionBadge regiao={data.regiao} siglaRegiao={data.siglaRegiao} />
               <span className="text-sm font-medium text-secondary">— {data.estado}</span>
             </div>
 
-            {/* ── KPIs Principais no Topo (Pirâmide Invertida) ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <KpiCard
-                title="Penetração PF"
-                value={data.penetracaoPf?.toFixed(1) ?? '—'}
-                unit="%"
-                subtitle="Usuários Pix / População"
-              />
-              <KpiCard
-                title="Ticket Médio PF"
-                value={data.ticketMedioPf != null
-                  ? `R$ ${data.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  : '—'}
-                subtitle="Valor médio por transação"
-              />
-              <KpiCard
-                title="Razão PJ/PF"
-                value={data.razaoPjPf?.toFixed(4) ?? '—'}
-                subtitle="Transações PJ sobre PF"
-              />
-              <KpiCard
-                title="Volume per Capita"
-                value={data.vlPerCapitaPf != null
-                  ? `R$ ${data.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  : '—'}
-                subtitle="Total transacionado por habitante"
-              />
-            </div>
-
-            {/* ── Hero: Mapa Maior (esquerda) + Contexto IBGE Menor (direita) ── */}
-            <div className="flex flex-col lg:flex-row gap-6 mb-6">
-
-              {/* Mapa do município (ocupa 2/3 da tela) */}
-              <div className="lg:flex-[2] bg-white rounded-card border border-border flex flex-col h-full">
+            {/* ── Grid Principal ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              {/* Lado Esquerdo: Mapa (8 colunas) */}
+              <div className="lg:col-span-8 bg-white rounded-card border border-border flex flex-col">
                 <div className="px-[18px] py-[14px] border-b border-border-s">
                   <h3 className="text-[13px] font-semibold text-main">Território Municipal — {metricaConfig.label}</h3>
                 </div>
-                <div className="px-[18px] py-[12px] flex-1">
+                {/* Ajustado min-h para 450px */}
+                <div className="px-[18px] py-[12px] flex-1 min-h-[450px]">
                   <MapaCoropletico
                     municipios={mapaMunicipios}
                     metricKey={metricaSelecionada}
                     metricLabel={metricaConfig.label}
                     metricFormato={metricaConfig.formato}
                     thresholds={thresholdsMapa}
-                    height={460}
+                    height={450} /* Ajustado height para 450 */
                     useAbsoluteScale={true}
                     showTileLayer={true}
                   />
                 </div>
               </div>
 
-              {/* Coluna de Contexto Socioeconômico (ocupa 1/3 da tela) */}
-              <div className="lg:flex-1 flex flex-col">
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <h3 className="text-[12px] font-bold text-secondary uppercase tracking-wider">
-                    Contexto Socioeconômico
-                  </h3>
-                </div>
-                
-                {/* Empilhamento dos 3 KPIs do IBGE */}
-                <div className="flex flex-col gap-4 flex-1">
+              {/* Lado Direito: Dashboard Lateral (KPIs Unificados) (4 colunas) */}
+              <div className="lg:col-span-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Linha 1 */}
+                  <KpiCard
+                    title="Penetração PF"
+                    value={data.penetracaoPf?.toFixed(1) ?? '—'}
+                    unit="%"
+                    subtitle="Usuários/População"
+                  />
+                  <KpiCard
+                    title="Ticket Médio"
+                    value={data.ticketMedioPf != null
+                      ? `R$ ${data.ticketMedioPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : '—'}
+                    subtitle="Valor por transação"
+                  />
+                  
+                  {/* Linha 2 */}
+                  <KpiCard
+                    title="Razão PJ/PF"
+                    value={data.razaoPjPf?.toFixed(4) ?? '—'}
+                    subtitle="Transações PJ/PF"
+                  />
+                  <KpiCard
+                    title="Vol. per Capita"
+                    value={data.vlPerCapitaPf != null
+                      ? `R$ ${data.vlPerCapitaPf.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : '—'}
+                    subtitle="Total por habitante"
+                  />
+
+                  {/* Linha 3 (PIB + Urbano) */}
                   <KpiCard
                     title="PIB per Capita"
                     value={data.pibPerCapita != null
                       ? `R$ ${data.pibPerCapita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                       : '—'}
-                    subtitle="Produto Interno Bruto por habitante"
+                    subtitle="PIB por habitante"
                   />
                   <KpiCard
                     title="Taxa de Urbanização"
                     value={data.taxaUrbanizacao?.toFixed(1) ?? '—'}
                     unit="%"
-                    subtitle="Proporção da população urbana"
+                    subtitle="Proporção urbana"
                   />
-                  <KpiCard
-                    title="IDHM"
-                    value={data.idhm?.toFixed(4) ?? '—'}
-                    subtitle="Índice de Desenvolvimento Humano Municipal"
-                  />
+
+                  {/* Linha 4: IDHM preenchendo as duas colunas */}
+                  <div className="sm:col-span-2">
+                    <KpiCard
+                      title="IDHM"
+                      value={data.idhm?.toFixed(4) ?? '—'}
+                      subtitle="Índice de Desenv. Humano"
+                    />
+                  </div>
                 </div>
               </div>
-
             </div>
 
-            {/* Gráfico Temporal (Ocupando 100% da largura no rodapé) */}
-            <div className="mt-6">
+            {/* Gráfico Temporal (Full Width no rodapé) */}
+            <div className="bg-white rounded-card border border-border p-4">
               <GraficoTemporalMunicipio
                 ibge={data.municipioIbge}
                 municipioNome={data.municipioNome}

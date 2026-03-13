@@ -347,9 +347,14 @@ export function VisaoGeral() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
   
-  const [dataInicioEvolucao, setDataInicioEvolucao] = useState<string | null>(() => {
+  // Novos estados isolados para a Evolução Histórica
+  const [evolucaoDataInicio, setEvolucaoDataInicio] = useState<string | null>(() => {
     const d = new Date();
     return addMonthsToYearMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, -11);
+  });
+  const [evolucaoDataFim, setEvolucaoDataFim] = useState<string | null>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
 
   const [metricaIdx, setMetricaIdx] = useState(0);
@@ -361,7 +366,7 @@ export function VisaoGeral() {
   const { data, loading, error } = useVisaoGeral(regiao, anoMes);
   const showSkeleton = useDelayedLoading(loading);
   const { data: dispData } = useDisparidadeRegional(regiao, anoMes, metricaConfig.value);
-  const { data: evolucaoData } = useEvolucaoTemporal(regiao, dataInicioEvolucao, anoMes);
+  const { data: evolucaoData } = useEvolucaoTemporal(regiao, evolucaoDataInicio, evolucaoDataFim);
 
   const evolucaoPenetracaoData = useMemo(() => (
     evolucaoData?.serieTemporal.map((ponto) => {
@@ -374,22 +379,6 @@ export function VisaoGeral() {
       return obj;
     }) ?? []
   ), [evolucaoData?.serieTemporal, metricaEvolucaoConfig.regiaoKey]);
-
-  const crescimentoAcumuladoRegiaoData = useMemo(() => {
-    if (!evolucaoData?.serieTemporal.length) return [];
-    const primeiro = evolucaoData.serieTemporal[0];
-    const ultimo = evolucaoData.serieTemporal[evolucaoData.serieTemporal.length - 1];
-
-    const primeiros = new Map(primeiro.porRegiao.map((r) => [r.regiao, r[metricaEvolucaoConfig.regiaoKey] as number | null]));
-    const ultimos = new Map(ultimo.porRegiao.map((r) => [r.regiao, r[metricaEvolucaoConfig.regiaoKey] as number | null]));
-
-    return Array.from(ultimos.entries())
-      .map(([regiaoNome, ultimoValor]) => ({
-        regiao: regiaoNome,
-        variacao: (ultimoValor ?? 0) - (primeiros.get(regiaoNome) ?? 0),
-      }))
-      .sort((a, b) => a.regiao.localeCompare(b.regiao));
-  }, [evolucaoData?.serieTemporal, metricaEvolucaoConfig.regiaoKey]);
 
   const regioesAtivas = useMemo(
     () => REGIONS.filter((r) => !regiao || r === regiao),
@@ -446,16 +435,9 @@ export function VisaoGeral() {
 
         <div className="w-px h-5 bg-border-s hidden sm:block"></div>
 
-        {/* 2. Período agrupado (de... até...) */}
+        {/* 2. Mês de Referência */}
         <div className="flex items-center gap-2">
-          <label className="text-[13px] font-medium text-main">Período: de</label>
-          <input
-            type="month"
-            value={dataInicioEvolucao ?? ''}
-            onChange={(e) => setDataInicioEvolucao(e.target.value || null)}
-            className="border border-border rounded-input px-3 py-1.5 text-[13px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-          <label className="text-[13px] font-medium text-main ml-1">até</label>
+          <label className="text-[13px] font-medium text-main">Mês de Referência:</label>
           <input
             type="month"
             value={anoMes ?? ''}
@@ -527,6 +509,7 @@ export function VisaoGeral() {
                   metricKey={metricaConfig.value}
                   metricLabel={metricaConfig.label}
                   metricFormato={metricaConfig.formato}
+                  showTileLayer={true}
                   height={540}
                 />
               </div>
@@ -622,23 +605,48 @@ export function VisaoGeral() {
               </div>
 
               <div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
                   
                   <div className="lg:col-span-2 bg-white rounded-card border border-border">
-                    <div className="px-[18px] py-[14px] border-b border-border-s flex justify-between items-center">
+                    <div className="px-[18px] py-[14px] border-b border-border-s flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div>
                         <h2 className="text-[13px] font-semibold text-main">Evolução Histórica</h2>
                         <p className="text-xs text-muted mt-0.5">Comportamento da métrica ao longo do período selecionado</p>
                       </div>
-                      <select
-                        value={metricaEvolucao}
-                        onChange={(e) => setMetricaEvolucao(e.target.value as MetricaEvolucao)}
-                        className="border border-border rounded-input px-2.5 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
-                      >
-                        {(Object.keys(METRICA_EVOLUCAO_CONFIG) as MetricaEvolucao[]).map((k) => (
-                          <option key={k} value={k}>{METRICA_EVOLUCAO_CONFIG[k].label}</option>
-                        ))}
-                      </select>
+                      
+                      {/* Filtros isolados da Evolução */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <select
+                          value={metricaEvolucao}
+                          onChange={(e) => setMetricaEvolucao(e.target.value as MetricaEvolucao)}
+                          className="border border-border rounded-input px-2.5 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          {(Object.keys(METRICA_EVOLUCAO_CONFIG) as MetricaEvolucao[]).map((k) => (
+                            <option key={k} value={k}>{METRICA_EVOLUCAO_CONFIG[k].label}</option>
+                          ))}
+                        </select>
+
+                        <div className="w-px h-4 bg-border-s hidden sm:block"></div>
+
+                        <div className="flex items-center gap-2">
+                          <label className="text-[12px] font-medium text-muted">De:</label>
+                          <input
+                            type="month"
+                            value={evolucaoDataInicio ?? ''}
+                            onChange={(e) => setEvolucaoDataInicio(e.target.value || null)}
+                            className="border border-border rounded-input px-2 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+                          />
+                          <span className="text-[12px] text-muted">Até</span>
+                          <input
+                            type="month"
+                            value={evolucaoDataFim ?? ''}
+                            onChange={(e) => setEvolucaoDataFim(e.target.value || null)}
+                            className="border border-border rounded-input px-2 py-1 text-[12px] bg-subtle text-main focus:outline-none focus:ring-2 focus:ring-accent"
+                          />
+                        </div>
+
+                        
+                      </div>
                     </div>
                     <div className="px-[18px] py-[12px]">
                       <ResponsiveContainer width="100%" height={320}>
@@ -688,36 +696,6 @@ export function VisaoGeral() {
                             />
                           ))}
                         </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
-                  <div className="lg:col-span-1 bg-white rounded-card border border-border">
-                    <div className="px-[18px] py-[14px] border-b border-border-s">
-                      <h2 className="text-[13px] font-semibold text-main">Crescimento Acumulado</h2>
-                      <p className="text-xs text-muted mt-0.5">{metricaEvolucaoConfig.variacaoLabel} no período</p>
-                    </div>
-                    <div className="px-[18px] py-[12px]">
-                      <ResponsiveContainer width="100%" height={320}>
-                        <BarChart data={crescimentoAcumuladoRegiaoData} margin={{ left: 10, right: 10 }}>
-                          <XAxis dataKey="regiao" tick={{ fontSize: 10 }} />
-                          <YAxis tickFormatter={(v) => metricaEvolucaoConfig.variacaoFormatter(Number(v))} tick={{ fontSize: 10 }} width={80} />
-                          <Tooltip
-                            formatter={(v) => [metricaEvolucaoConfig.variacaoFormatter(Number(v)), metricaEvolucaoConfig.variacaoLabel]}
-                            contentStyle={TOOLTIP_STYLE.contentStyle}
-                            labelStyle={TOOLTIP_STYLE.labelStyle}
-                            itemStyle={TOOLTIP_STYLE.itemStyle}
-                            cursor={TOOLTIP_STYLE.cursor}
-                          />
-                          <Bar dataKey="variacao" name={metricaEvolucaoConfig.variacaoLabel} radius={[4, 4, 0, 0]}>
-                            {crescimentoAcumuladoRegiaoData.map((entry) => (
-                              <Cell
-                                key={entry.regiao}
-                                fill={REGION_COLORS[REGIAO_LABEL[entry.regiao] ?? entry.regiao] ?? '#64748b'}
-                              />
-                            ))}
-                          </Bar>
-                        </BarChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
